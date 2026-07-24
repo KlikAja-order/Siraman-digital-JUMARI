@@ -3,81 +3,193 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Dashboard | E-Gov Siraman by Jumari</title>
+  <title>Admin Portal | E-Gov Siraman by Jumari</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
     body { background-color: #0a0d14; color: #f3f4f6; font-family: 'Plus Jakarta Sans', sans-serif; }
-    .glass-panel { background: rgba(18, 24, 38, 0.8); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); }
+    .glass-panel { background: rgba(18, 24, 38, 0.85); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); }
+    .glass-nav { background: rgba(10, 13, 20, 0.8); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
+    .input-field { background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255, 255, 255, 0.1); color: #fff; font-size: 0.825rem; border-radius: 0.75rem; padding: 0.625rem 0.875rem; width: 100%; }
+    .input-field:focus { outline: none; border-color: #10b981; }
+    .btn-emerald { background: #10b981; color: #0a0d14; font-weight: 700; transition: all 0.2s; }
+    .btn-emerald:hover { background: #059669; box-shadow: 0 0 15px rgba(16, 185, 129, 0.4); }
   </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-4">
+<body class="min-h-screen flex flex-col justify-between">
 
   <!-- Modal Login Admin -->
-  <div id="login-card" class="w-full max-w-md glass-panel p-8 rounded-2xl shadow-2xl relative">
-    <div class="text-center mb-6">
-      <div class="w-12 h-12 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 font-bold text-2xl flex items-center justify-center mx-auto mb-3">
-        J
+  <div id="login-card" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+    <div class="w-full max-w-md glass-panel p-8 rounded-3xl shadow-2xl border border-emerald-500/20">
+      <div class="text-center mb-6">
+        <div class="w-14 h-14 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 font-extrabold text-2xl flex items-center justify-center mx-auto mb-3 shadow-lg shadow-emerald-500/10">
+          J
+        </div>
+        <h2 class="text-xl font-bold text-white">E-Gov Siraman Admin</h2>
+        <p class="text-xs text-emerald-400 font-medium tracking-wide mt-1">Initiative by Jumari</p>
       </div>
-      <h2 class="text-xl font-bold text-white">E-Gov Siraman Admin</h2>
-      <p class="text-xs text-gray-400 mt-1">Masukan akun kredensial Anda untuk mengelola portal</p>
-    </div>
 
-    <form onsubmit="handleLogin(event)" class="space-y-4">
-      <div>
-        <label class="block text-xs font-semibold text-gray-300 mb-1">Email Administrator</label>
-        <input type="email" id="email" required value="admin@siraman.desa.id" class="w-full bg-slate-900 border border-gray-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500">
+      <form onsubmit="handleLogin(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-gray-300 mb-1.5">Email Administrator</label>
+          <input type="email" id="email" required value="admin@siraman.desa.id" class="input-field">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-300 mb-1.5">Password Kredensial</label>
+          <input type="password" id="password" required value="admin123" class="input-field">
+        </div>
+        <button type="submit" class="w-full btn-emerald py-3 rounded-xl text-xs uppercase tracking-wider shadow-lg mt-2">
+          Masuk Ke Panel Kontrol
+        </button>
+      </form>
+      
+      <div class="mt-6 text-center">
+        <a href="index.html" class="text-xs text-gray-400 hover:text-emerald-400 flex items-center justify-center gap-1.5 transition">
+          <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i> Kembali ke Halaman Depan Warga
+        </a>
       </div>
-      <div>
-        <label class="block text-xs font-semibold text-gray-300 mb-1">Password</label>
-        <input type="password" id="password" required value="admin123" class="w-full bg-slate-900 border border-gray-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500">
-      </div>
-      <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold py-3 rounded-xl text-xs uppercase tracking-wider transition shadow-lg shadow-emerald-500/20">
-        Masuk Ke Dashboard
-      </button>
-    </form>
-    
-    <div class="mt-6 text-center">
-      <a href="index.html" class="text-xs text-gray-500 hover:text-emerald-400 flex items-center justify-center gap-1">
-        <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i> Kembali ke Halaman Depan
-      </a>
     </div>
   </div>
 
-  <!-- Dashboard Setelah Login -->
-  <div id="admin-dashboard" class="hidden w-full max-w-4xl glass-panel p-6 rounded-2xl">
-    <div class="flex items-center justify-between pb-4 border-b border-gray-800 mb-6">
-      <div>
-        <h2 class="text-lg font-bold text-white">Dashboard Kontrol E-Gov</h2>
-        <p class="text-xs text-emerald-400">Status: Terkoneksi (Admin Aktif)</p>
-      </div>
-      <button onclick="logout()" class="px-3 py-1.5 bg-red-500/20 text-red-400 border border-red-500/30 rounded-lg text-xs font-semibold">
-        Keluar / Logout
-      </button>
-    </div>
-
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div class="p-4 bg-slate-900/60 rounded-xl border border-gray-800">
-        <h3 class="text-sm font-bold text-white mb-2">+ Tambah Berita / Program Baru</h3>
-        <input type="text" placeholder="Judul Berita..." class="w-full bg-slate-950 border border-gray-800 rounded-lg p-2 text-xs text-white mb-2">
-        <textarea placeholder="Isi penjelasan program..." class="w-full bg-slate-950 border border-gray-800 rounded-lg p-2 text-xs text-white mb-3" rows="3"></textarea>
-        <button onclick="alert('Program berhasil ditambahkan ke portal!')" class="w-full bg-emerald-500 text-slate-950 font-bold py-2 rounded-lg text-xs">Publikasikan</button>
-      </div>
-
-      <div class="p-4 bg-slate-900/60 rounded-xl border border-gray-800">
-        <h3 class="text-sm font-bold text-white mb-2">Aspirasi Warga Masuk</h3>
-        <div class="space-y-2">
-          <div class="p-2.5 bg-slate-950 rounded-lg border border-gray-800 text-xs">
-            <div class="flex justify-between text-gray-400 mb-1">
-              <span class="font-bold text-white">Pak Budi (RT 03)</span>
-              <span>Hari ini</span>
-            </div>
-            <p class="text-gray-300">Mohon perbaikan penerangan jalan umum di blok selatan...</p>
+  <!-- Dashboard Admin Utama -->
+  <div id="admin-dashboard" class="hidden flex-grow flex flex-col">
+    <!-- Topbar -->
+    <header class="sticky top-0 z-40 glass-nav px-4 py-3">
+      <div class="max-w-6xl mx-auto flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 font-bold">
+            J
+          </div>
+          <div>
+            <h1 class="font-bold text-sm text-white leading-none">Panel Kontrol E-Gov</h1>
+            <span class="text-[10px] text-emerald-400 font-medium">Sistem Kampanye & Transparansi Siraman</span>
           </div>
         </div>
+        <button onclick="logout()" class="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition">
+          <i data-lucide="log-out" class="w-3.5 h-3.5"></i> Keluar
+        </button>
       </div>
-    </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 py-6 w-full flex-grow">
+      <!-- Sub Navigasi Admin Menu -->
+      <div class="flex gap-2 overflow-x-auto pb-4 mb-6 border-b border-gray-800/80 no-scrollbar">
+        <button onclick="switchAdminTab('artikel')" id="btn-tab-artikel" class="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-500 text-slate-950 flex items-center gap-2 whitespace-nowrap">
+          <i data-lucide="plus-circle" class="w-4 h-4"></i> Kelola Artikel & Foto
+        </button>
+        <button onclick="switchAdminTab('transparansi')" id="btn-tab-transparansi" class="px-4 py-2 rounded-xl text-xs font-bold bg-slate-800 text-gray-300 hover:text-white flex items-center gap-2 whitespace-nowrap">
+          <i data-lucide="pie-chart" class="w-4 h-4"></i> Input APBDes
+        </button>
+        <button onclick="switchAdminTab('aspirasi')" id="btn-tab-aspirasi" class="px-4 py-2 rounded-xl text-xs font-bold bg-slate-800 text-gray-300 hover:text-white flex items-center gap-2 whitespace-nowrap">
+          <i data-lucide="inbox" class="w-4 h-4"></i> Aspirasi Warga
+        </button>
+      </div>
+
+      <!-- TAB 1: KELOLA ARTIKEL & UPLOAD FOTO -->
+      <section id="sec-artikel" class="admin-sec space-y-6">
+        <div class="glass-panel p-6 rounded-2xl border border-gray-800">
+          <h3 class="text-base font-bold text-white mb-1 flex items-center gap-2">
+            <i data-lucide="file-text" class="text-emerald-400"></i> Buat Artikel / Program Baru Pak Jumari
+          </h3>
+          <p class="text-xs text-gray-400 mb-6">Artikel yang di-publish akan langsung muncul di halaman utama warga.</p>
+
+          <form onsubmit="simpanArtikel(event)" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div class="md:col-span-2">
+                <label class="block text-xs font-semibold text-gray-300 mb-1">Judul Artikel / Program</label>
+                <input type="text" id="art-judul" required placeholder="Contoh: Program Bantuan Digitalisasi UMKM Siraman" class="input-field">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-300 mb-1">Kategori</label>
+                <select id="art-kategori" class="input-field">
+                  <option value="Program Unggulan">Program Unggulan</option>
+                  <option value="Kegiatan Lapangan">Kegiatan Lapangan</option>
+                  <option value="Pengumuman">Pengumuman</option>
+                  <option value="Visi Misi">Visi & Misi</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Fitur Upload Foto Banner -->
+            <div>
+              <label class="block text-xs font-semibold text-gray-300 mb-1">Upload Foto Banner / Dokumentasi</label>
+              <div class="border-2 border-dashed border-gray-700 hover:border-emerald-500/50 rounded-2xl p-4 text-center cursor-pointer transition bg-slate-900/40" onclick="document.getElementById('art-foto').click()">
+                <i data-lucide="upload-cloud" class="w-8 h-8 text-emerald-400 mx-auto mb-1"></i>
+                <p class="text-xs font-semibold text-gray-300">Klik untuk Pilih Foto dari HP</p>
+                <p class="text-[10px] text-gray-500 mt-0.5">Format JPG, PNG, atau WEBP (Otomatis Di-kompres)</p>
+                <input type="file" id="art-foto" accept="image/*" class="hidden" onchange="previewGambar(this)">
+              </div>
+              <!-- Preview Gambar -->
+              <div id="preview-container" class="hidden mt-3 relative rounded-xl overflow-hidden max-h-48 border border-gray-700">
+                <img id="img-preview" class="w-full object-cover max-h-48" src="" alt="Preview">
+                <button type="button" onclick="hapusPreview()" class="absolute top-2 right-2 p-1.5 bg-red-600/80 text-white rounded-lg text-xs">
+                  <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-gray-300 mb-1">Isi Lengkap Artikel</label>
+              <textarea id="art-isi" rows="5" required placeholder="Tuliskan gagasan, tujuan, serta manfaat program ini untuk warga Siraman..." class="input-field"></textarea>
+            </div>
+
+            <button type="submit" class="btn-emerald px-6 py-3 rounded-xl text-xs flex items-center gap-2">
+              <i data-lucide="send" class="w-4 h-4"></i> Publikasikan Artikel Sekarang
+            </button>
+          </form>
+        </div>
+      </section>
+
+      <!-- TAB 2: INPUT APBDES TRANSPARANSI -->
+      <section id="sec-transparansi" class="admin-sec hidden space-y-6">
+        <div class="glass-panel p-6 rounded-2xl border border-gray-800">
+          <h3 class="text-base font-bold text-white mb-1 flex items-center gap-2">
+            <i data-lucide="database" class="text-emerald-400"></i> Update Data Transparansi Anggaran
+          </h3>
+          <p class="text-xs text-gray-400 mb-6">Kelola transparansi alokasi dana agar warga percaya sepenuhnya.</p>
+
+          <form onsubmit="simpanAPBD(event)" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-gray-300 mb-1">Total APBDes (Rp)</label>
+                <input type="text" id="apbd-total" required placeholder="Misal: 1.850.000.000" class="input-field">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-300 mb-1">Alokasi Pembangunan Fisik (%)</label>
+                <input type="number" id="apbd-fisik" required placeholder="58" class="input-field">
+              </div>
+            </div>
+            <button type="submit" class="btn-emerald px-6 py-3 rounded-xl text-xs flex items-center gap-2">
+              <i data-lucide="check-circle" class="w-4 h-4"></i> Perbarui Grafik Transparansi
+            </button>
+          </form>
+        </div>
+      </section>
+
+      <!-- TAB 3: ASPIRASI WARGA -->
+      <section id="sec-aspirasi" class="admin-sec hidden space-y-4">
+        <div class="glass-panel p-6 rounded-2xl border border-gray-800">
+          <h3 class="text-base font-bold text-white mb-1 flex items-center gap-2">
+            <i data-lucide="message-square" class="text-emerald-400"></i> Laporan & Aspirasi Masuk
+          </h3>
+          <p class="text-xs text-gray-400 mb-4">Aspirasi warga yang dikirimkan via website.</p>
+
+          <div class="space-y-3">
+            <div class="p-4 bg-slate-900/80 rounded-xl border border-gray-800 flex justify-between items-start">
+              <div>
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="text-xs font-bold text-white">Pak Budi (RT 03)</span>
+                  <span class="text-[10px] bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full border border-amber-500/30">Menunggu Tanggapan</span>
+                </div>
+                <p class="text-xs text-gray-300">"Mohon perbaikan jalan penerangan di sektor selatan Siraman..."</p>
+              </div>
+              <button onclick="alert('Aspirasi ditandai diproses!')" class="text-xs text-emerald-400 hover:underline">Tanggapi</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
   </div>
 
   <script>
@@ -92,6 +204,45 @@
     function logout() {
       document.getElementById('admin-dashboard').classList.add('hidden');
       document.getElementById('login-card').classList.remove('hidden');
+    }
+
+    function switchAdminTab(secName) {
+      document.querySelectorAll('.admin-sec').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('[id^="btn-tab-"]').forEach(el => {
+        el.className = 'px-4 py-2 rounded-xl text-xs font-bold bg-slate-800 text-gray-300 hover:text-white flex items-center gap-2 whitespace-nowrap';
+      });
+
+      document.getElementById('sec-' + secName).classList.remove('hidden');
+      const activeBtn = document.getElementById('btn-tab-' + secName);
+      activeBtn.className = 'px-4 py-2 rounded-xl text-xs font-bold bg-emerald-500 text-slate-950 flex items-center gap-2 whitespace-nowrap';
+    }
+
+    function previewGambar(input) {
+      if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          document.getElementById('img-preview').src = e.target.result;
+          document.getElementById('preview-container').classList.remove('hidden');
+        }
+        reader.readAsDataURL(input.files[0]);
+      }
+    }
+
+    function hapusPreview() {
+      document.getElementById('art-foto').value = '';
+      document.getElementById('preview-container').classList.add('hidden');
+    }
+
+    function simpanArtikel(e) {
+      e.preventDefault();
+      alert('Artikel & Foto berhasil disimpan dan dipublikasikan!');
+      e.target.reset();
+      hapusPreview();
+    }
+
+    function simpanAPBD(e) {
+      e.preventDefault();
+      alert('Data Transparansi APBDes berhasil diperbarui!');
     }
   </script>
 </body>
