@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Desa Digital Siraman - Portal & Smart Service</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            800: '#166534',
+                            900: '#14532d',
+                        },
+                        darkbg: '#0f172a',
+                        darkcard: '#1e293b'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .glass {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+        }
+        .dark .glass {
+            background: rgba(30, 41, 59, 0.85);
+            backdrop-filter: blur(12px);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 dark:bg-darkbg dark:text-gray-100 font-sans transition-colors duration-300">
+
+    <!-- Top Notification Bar -->
+    <div class="bg-brand-700 text-white text-xs py-2 px-4 flex justify-between items-center shadow-md">
+        <div class="flex items-center space-x-3">
+            <span><i class="fa-solid fa-bullhorn mr-1"></i> <strong>Pengumuman:</strong> Pelayanan Surat Online 24/7 Siap Digunakan!</span>
+        </div>
+        <div class="flex items-center space-x-4">
+            <button onclick="toggleDarkMode()" class="hover:text-yellow-300 transition">
+                <i id="theme-icon" class="fa-solid fa-moon"></i> <span id="theme-text" class="hidden sm:inline">Mode Gelap</span>
+            </button>
+            <span class="border-r border-brand-500 h-4"></span>
+            <a href="#emergency" class="bg-red-600 hover:bg-red-700 text-white px-2 py-0.5 rounded font-bold transition flex items-center gap-1">
+                <i class="fa-solid fa-phone-flip"></i> Darurat
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Header / Navigation -->
+    <header class="sticky top-0 z-40 glass border-b border-gray-200 dark:border-gray-800 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+            <!-- Logo & Title -->
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('beranda')">
+                <div class="w-10 h-10 bg-brand-600 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg">
+                    S
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold leading-none text-gray-900 dark:text-white">Desa Siraman</h1>
+                    <p class="text-xs text-brand-600 dark:text-brand-400 font-medium">Smart Digital Village Hub</p>
+                </div>
+            </div>
+
+            <!-- Global Search -->
+            <div class="hidden md:flex items-center relative w-1/3">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 text-gray-400"></i>
+                <input type="text" id="global-search" placeholder="Cari layanan, berita, surat, UMKM..." class="w-full pl-9 pr-4 py-1.5 rounded-full text-sm bg-gray-100 dark:bg-gray-800 border-none focus:ring-2 focus:ring-brand-500 outline-none">
+            </div>
+
+            <!-- Header Right Action -->
+            <div class="flex items-center space-x-3">
+                <button onclick="switchTab('layanan-surat')" class="hidden sm:flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition shadow-md">
+                    <i class="fa-solid fa-file-signature"></i> Buat Surat
+                </button>
+                <button id="access-mode-btn" onclick="toggleAdminView()" class="border border-brand-600 text-brand-600 hover:bg-brand-50 dark:hover:bg-gray-800 px-3 py-1.5 rounded-lg text-sm font-semibold transition flex items-center gap-2">
+                    <i class="fa-solid fa-lock"></i> <span id="access-label">Login Admin</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Navigation Links Horizontal Menu -->
+        <nav class="bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 overflow-x-auto">
+            <div class="max-w-7xl mx-auto px-4 flex space-x-1 py-2 text-xs font-semibold whitespace-nowrap">
+                <button onclick="switchTab('beranda')" class="nav-btn active px-3 py-1.5 rounded-md text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-gray-800"><i class="fa-solid fa-house mr-1"></i> Beranda</button>
+                <button onclick="switchTab('profil')" class="nav-btn px-3 py-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"><i class="fa-solid fa-landmark mr-1"></i> Profil Desa</button>
+                <button onclick="switchTab('penduduk')" class="nav-btn px-3 py-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"><i class="fa-solid fa-users mr-1"></i> Data Penduduk</button>
+                <button onclick="switchTab('berita')" class="nav-btn px-3 py-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"><i class="fa-solid fa-newspaper mr-1"></i> Berita & Agenda</button>
+                <button onclick="switchTab('layanan-surat')" class="nav-btn px-3 py-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"><i class="fa-solid fa-file-lines mr-1"></i> Layanan Surat</button>
+                <button onclick="switchTab('anggaran')" class="nav-btn px-3 py-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"><i class="fa-solid fa-coins mr-1"></i> Transparansi APBDes</button>
+                <button onclick="switchTab('pembangunan')" class="nav-btn px-3 py-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"><i class="fa-solid fa-helmet-safety mr-1"></i> Pembangunan</button>
+                <button onclick="switchTab('umkm-potensi')" class="nav-btn px-3 py-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"><i class="fa-solid fa-store mr-1"></i> UMKM & Potensi</button>
+                <button onclick="switchTab('pengaduan')" class="nav-btn px-3 py-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"><i class="fa-solid fa-comments mr-1"></i> Smart Complaint</button>
+                <button onclick="switchTab('smart-ecosystem')" class="nav-btn px-3 py-1.5 rounded-md bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow"><i class="fa-solid fa-bolt mr-1"></i> Siraman Smart Ecosystem</button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Admin Banner Indicator (Hidden by default) -->
+    <div id="admin-indicator" class="hidden bg-amber-500 text-slate-900 font-bold px-4 py-2 text-center text-xs flex justify-between items-center shadow-inner">
+        <span><i class="fa-solid fa-user-shield mr-2"></i> Mode Admin Aktif — Anda memiliki hak akses pengeditan data dan manajemen internal desa.</span>
+        <button onclick="switchTab('admin-dashboard')" class="underline bg-slate-900 text-white px-2 py-1 rounded text-xs">Buka Dashboard Admin</button>
+    </div>
+
+    <!-- Main Content Container -->
+    <main class="max-w-7xl mx-auto px-4 py-6">
+
+        <!-- TAB: BERANDA -->
+        <section id="tab-beranda" class="tab-content space-y-8">
+            <!-- Hero Banner -->
+            <div class="relative rounded-2xl overflow-hidden bg-gradient-to-r from-brand-900 via-brand-800 to-emerald-900 text-white p-8 md:p-12 shadow-xl">
+                <div class="relative z-10 max-w-2xl">
+                    <span class="inline-block bg-brand-500 text-white text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider mb-3">Selamat Datang di Portal Resmi</span>
+                    <h2 class="text-3xl md:text-5xl font-extrabold mb-4 leading-tight">Mewujudkan Desa Siraman Cerdas, Mandiri & Sejahtera</h2>
+                    <p class="text-brand-100 text-sm md:text-base mb-6">Pusat pelayanan digital terpadu untuk kemudahan administrasi warga, transparansi pembangunan, dan promosi potensi desa.</p>
+                    <div class="flex flex-wrap gap-3">
+                        <button onclick="switchTab('layanan-surat')" class="bg-white text-brand-900 hover:bg-brand-50 font-bold px-5 py-2.5 rounded-xl text-sm transition shadow-lg">
+                            <i class="fa-solid fa-file-pen mr-2"></i> Ajukan Surat Online
+                        </button>
+                        <button onclick="switchTab('pengaduan')" class="bg-red-500 hover:bg-red-600 text-white font-bold px-5 py-2.5 rounded-xl text-sm transition shadow-lg">
+                            <i class="fa-solid fa-bullhorn mr-2"></i> Pengaduan Warga
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sambutan Kepala Desa & Quick Stats -->
+            <div class="grid md:grid-cols-3 gap-6">
+                <div class="md:col-span-2 bg-white dark:bg-darkcard p-6 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm flex flex-col sm:flex-row gap-6 items-center">
+                    <div class="w-32 h-32 rounded-2xl overflow-hidden bg-brand-100 flex-shrink-0 border-2 border-brand-500 shadow">
+                        <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=400&q=80" alt="Kepala Desa" class="w-full h-full object-cover">
+                    </div>
+                    <div>
+                        <span class="text-xs font-bold text-brand-600 dark:text-brand-400 tracking-wide uppercase">Sambutan Kepala Desa</span>
+                        <h3 class="text-xl font-bold mt-1 mb-2">Bapak Damar Wibowo, S.IP</h3>
+                        <p class="text-xs text-gray-600 dark:text-gray-300 leading-relaxed italic">"Melalui platform Siraman Smart Digital, kami berkomitmen menghadirkan layanan publik yang cepat, transparan, dan dapat diakses dari mana saja. Mari bersama membangun Desa Siraman."</p>
+                    </div>
+                </div>
+
+                <!-- Live Quick Stats -->
+                <div class="bg-white dark:bg-darkcard p-6 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm flex flex-col justify-between">
+                    <h4 class="font-bold text-sm text-gray-500 dark:text-gray-400 mb-3 uppercase tracking-wider"><i class="fa-solid fa-chart-line text-brand-600 mr-1"></i> Ringkasan Statistik</h4>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="bg-gray-50 dark:bg-gray-800 p-3 rounded-xl text-center">
+                            <div class="text-2xl font-black text-brand-600">4,820</div>
+                            <div class="text-xs text-gray-500">Penduduk</div>
+                        </div>
+                        <div class="bg-gray-50 dark:bg-gray-800 p-3 rounded-xl text-center">
+                            <div class="text-2xl font-black text-blue-600">1,350</div>
+                            <div class="text-xs text-gray-500">Kepala Keluarga</div>
+                        </div>
+                        <div class="bg-gray-50 dark:bg-gray-800 p-3 rounded-xl text-center">
+                            <div class="text-2xl font-black text-amber-600">48</div>
+                            <div class="text-xs text-gray-500">UMKM Aktif</div>
+                        </div>
+                        <div class="bg-gray-50 dark:bg-gray-800 p-3 rounded-xl text-center">
+                            <div class="text-2xl font-black text-emerald-600">99.2%</div>
+                            <div class="text-xs text-gray-500">SLA Surat</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Berita & Pengumuman Grid -->
+            <div class="grid md:grid-cols-3 gap-6">
+                <!-- Berita Terbaru -->
+                <div class="md:col-span-2 space-y-4">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-lg font-bold flex items-center gap-2"><i class="fa-solid fa-newspaper text-brand-600"></i> Berita Desa Terbaru</h3>
+                        <button onclick="switchTab('berita')" class="text-xs font-bold text-brand-600 hover:underline">Lihat Semua →</button>
+                    </div>
+                    <div class="grid sm:grid-cols-2 gap-4">
+                        <div class="bg-white dark:bg-darkcard rounded-xl overflow-hidden border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md transition">
+                            <div class="h-36 bg-gray-200 relative">
+                                <img src="https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&w=600&q=80" class="w-full h-full object-cover">
+                                <span class="absolute top-2 left-2 bg-brand-600 text-white text-[10px] px-2 py-0.5 rounded font-bold">Pembangunan</span>
+                            </div>
+                            <div class="p-4">
+                                <span class="text-[10px] text-gray-400">24 Juli 2026</span>
+                                <h4 class="font-bold text-sm mt-1 mb-2 hover:text-brand-600 cursor-pointer">Peresmian Sistem Pengairan Sawah Otomatis di Dusun Seneng</h4>
+                                <p class="text-xs text-gray-500 line-clamp-2">Program modernisasi pertanian desa siraman berbasis IoT resmi diluncurkan hari ini oleh Kepala Desa.</p>
+                            </div>
+                        </div>
+                        <div class="bg-white dark:bg-darkcard rounded-xl overflow-hidden border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md transition">
+                            <div class="h-36 bg-gray-200 relative">
+                                <img src="https://images.unsplash.com/photo-1511632765486-a01980e01a18?auto=format&fit=crop&w=600&q=80" class="w-full h-full object-cover">
+                                <span class="absolute top-2 left-2 bg-blue-600 text-white text-[10px] px-2 py-0.5 rounded font-bold">Kegiatan</span>
+                            </div>
+                            <div class="p-4">
+                                <span class="text-[10px] text-gray-400">22 Juli 2026</span>
+                                <h4 class="font-bold text-sm mt-1 mb-2 hover:text-brand-600 cursor-pointer">Kerja Bakti Massal Penataan Taman Desa Digital Siraman</h4>
+                                <p class="text-xs text-gray-500 line-clamp-2">Warga antusias mempercantik area publik desa menjelang penilaian Desa Wisata Terbaik.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pengumuman Important Side Widget -->
+                <div class="space-y-4">
+                    <h3 class="text-lg font-bold flex items-center gap-2"><i class="fa-solid fa-bullhorn text-amber-500"></i> Pengumuman Penting</h3>
+                    <div class="bg-white dark:bg-darkcard p-4 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm space-y-3">
+                        <div class="p-3 bg-amber-50 dark:bg-amber-950/30 border-l-4 border-amber-500 rounded-r-lg">
+                            <span class="text-[10px] font-bold text-amber-600">Bantuan Sosial</span>
+                            <h5 class="text-xs font-bold text-gray-800 dark:text-gray-200 mt-0.5">Jadwal Penyaluran BLT Tahap III</h5>
+                            <p class="text-[11px] text-gray-600 dark:text-gray-400 mt-1">Hari Senin, 27 Juli 2026 di Balai Desa Siraman mulai pukul 08.00 WIB.</p>
+                        </div>
+                        <div class="p-3 bg-blue-50 dark:bg-blue-950/30 border-l-4 border-blue-500 rounded-r-lg">
+                            <span class="text-[10px] font-bold text-blue-600">Kesehatan</span>
+                            <h5 class="text-xs font-bold text-gray-800 dark:text-gray-200 mt-0.5">Posyandu Balita & Lansia Dusun Tegalmulyo</h5>
+                            <p class="text-[11px] text-gray-600 dark:text-gray-400 mt-1">Rabu, 29 Juli 2026. Harap membawa buku KIA/KMS.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB: PROFIL DESA -->
+        <section id="tab-profil" class="tab-content hidden space-y-8">
+            <div class="bg-white dark:bg-darkcard p-8 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
+                <h2 class="text-2xl font-bold mb-4 flex items-center gap-2"><i class="fa-solid fa-landmark text-brand-600"></i> Profil Desa Siraman</h2>
+                <div class="grid md:grid-cols-2 gap-8">
+                    <div class="space-y-4">
+                        <h3 class="text-lg font-bold border-b border-gray-200 pb-2">Sejarah Desa</h3>
+                        <p class="text-xs leading-relaxed text-gray-600 dark:text-gray-300">Desa Siraman berakar dari sejarah panjang tatanan wilayah Gunungkidul yang kaya akan kebudayaan dan kearifan lokal. Nama Siraman berasal dari tradisi sumber air alami yang menyegarkan, menyimbolkan kehidupan dan kesejahteraan bagi segenap warga desa.</p>
+                        <h3 class="text-lg font-bold border-b border-gray-200 pb-2">Visi & Misi</h3>
+                        <p class="text-xs font-semibold text-brand-600">"Mewujudkan Desa Siraman Cerdas, Sejahtera, Berkarakter, dan Transparan Berbasis Teknologi Digital."</p>
+                        <ul class="list-disc pl-4 text-xs space-y-1 text-gray-600 dark:text-gray-300">
+                            <li>Meningkatkan kualitas pelayanan publik berbasis digital.</li>
+                            <li>Mengembangkan perekonomian warga melalui pendampingan UMKM & Pertanian modern.</li>
+                            <li>Keterbukaan informasi dan transparansi tata kelola anggaran desa.</li>
+                        </ul>
+                    </div>
+                    <div class="space-y-4">
+                        <h3 class="text-lg font-bold border-b border-gray-200 pb-2">Data Wilayah & Peta</h3>
+                        <div class="bg-gray-100 dark:bg-gray-800 rounded-xl p-4 text-xs space-y-2">
+                            <div class="flex justify-between"><span>Luas Wilayah:</span><span class="font-bold">420,5 Hektar</span></div>
+                            <div class="flex justify-between"><span>Jumlah Dusun / RW / RT:</span><span class="font-bold">6 Dusun / 12 RW / 36 RT</span></div>
+                            <div class="flex justify-between"><span>Batas Utara:</span><span class="font-bold">Desa Wonosari</span></div>
+                            <div class="flex justify-between"><span>Batas Selatan:</span><span class="font-bold">Desa Baleharjo</span></div>
+                        </div>
+                        <div class="h-48 rounded-xl overflow-hidden bg-gray-300 relative flex items-center justify-center border">
+                            <span class="text-xs font-bold text-gray-600"><i class="fa-solid fa-map-location-dot mr-1"></i> Peta Digital Desa Siraman (Integrasi Google Maps)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB: DATA PENDUDUK -->
+        <section id="tab-penduduk" class="tab-content hidden space-y-8">
+            <div class="bg-white dark:bg-darkcard p-8 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold flex items-center gap-2"><i class="fa-solid fa-users text-brand-600"></i> Demografi & Demografi Penduduk</h2>
+                        <p class="text-xs text-gray-500">Statistik kependudukan Desa Siraman terupdate real-time</p>
+                    </div>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-8">
+                    <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-xl">
+                        <h4 class="font-bold text-xs uppercase text-gray-500 mb-4 text-center">Statistik Kelompok Usia</h4>
+                        <canvas id="ageChart" height="200"></canvas>
+                    </div>
+                    <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-xl">
+                        <h4 class="font-bold text-xs uppercase text-gray-500 mb-4 text-center">Mata Pencaharian Utama</h4>
+                        <canvas id="jobChart" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB: BERITA & AGENDA -->
+        <section id="tab-berita" class="tab-content hidden space-y-8">
+            <div class="bg-white dark:bg-darkcard p-8 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
+                <h2 class="text-2xl font-bold mb-6 flex items-center gap-2"><i class="fa-solid fa-newspaper text-brand-600"></i> Berita & Calendar Agenda Desa</h2>
+                <div class="grid md:grid-cols-3 gap-6">
+                    <div class="md:col-span-2 space-y-4">
+                        <div class="border-b pb-2 font-bold">Daftar Berita & Dokumentasi</div>
+                        <div class="space-y-3">
+                            <div class="p-3 border rounded-xl flex gap-4 items-center">
+                                <div class="w-20 h-20 bg-gray-200 rounded-lg flex-shrink-0"></div>
+                                <div>
+                                    <span class="text-[10px] bg-brand-100 text-brand-700 px-2 py-0.5 rounded font-bold">Prestasi</span>
+                                    <h4 class="text-sm font-bold mt-1">Desa Siraman Raih Penghargaan Desa Digital Terbaik Kabupaten</h4>
+                                    <p class="text-xs text-gray-500">20 Juli 2026 — Penghargaan diserahkan langsung oleh Bupati...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="border-b pb-2 font-bold">Agenda Mendatang</div>
+                        <div class="space-y-2 text-xs">
+                            <div class="p-3 bg-brand-50 dark:bg-gray-800 rounded-lg border-l-4 border-brand-600">
+                                <div class="font-bold text-brand-700">Rapat Musrenbangdes</div>
+                                <div class="text-gray-500">📅 30 Juli 2026 | 📍 Balai Desa</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB: LAYANAN SURAT ONLINE -->
+        <section id="tab-layanan-surat" class="tab-content hidden space-y-8">
+            <div class="bg-white dark:bg-darkcard p-8 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
+                <div class="text-center max-w-xl mx-auto mb-8">
+                    <span class="bg-brand-100 text-brand-700 text-xs px-3 py-1 rounded-full font-bold uppercase">Siraman Smart Service</span>
+                    <h2 class="text-2xl font-bold mt-2">Layanan Surat Online Desa</h2>
+                    <p class="text-xs text-gray-500 mt-1">Buat permohonan surat dokumen kependudukan secara mandiri dengan cepat, dapat dilacak, dan dilengkapi verifikasi QR Code.</p>
+                </div>
+
+                <div class="grid md:grid-cols-3 gap-6">
+                    <!-- Form Surat -->
+                    <div class="md:col-span-2 bg-gray-50 dark:bg-gray-800 p-6 rounded-2xl space-y-4">
+                        <h3 class="font-bold text-sm text-brand-600 border-b pb-2">Form Permohonan Surat Mandiri</h3>
+                        <form id="surat-form" onsubmit="submitSurat(event)" class="space-y-3 text-xs">
+                            <div>
+                                <label class="block font-bold mb-1">Pilih Jenis Surat</label>
+                                <select id="jenis-surat" class="w-full p-2.5 rounded-lg border dark:bg-gray-900 outline-none focus:ring-2 focus:ring-brand-500">
+                                    <option>Surat Keterangan Domisili</option>
+                                    <option>Surat Pengantar SKCK</option>
+                                    <option>Surat Keterangan Usaha (SKU)</option>
+                                    <option>Surat Keterangan Kelahiran</option>
+                                    <option>Surat Keterangan Kematian</option>
+                                    <option>Surat Keterangan Pindah Penduduk</option>
+                                </select>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block font-bold mb-1">NIK Pemohon</label>
+                                    <input type="text" placeholder="340301xxxxxxxxxx" required class="w-full p-2.5 rounded-lg border dark:bg-gray-900 outline-none">
+                                </div>
+                                <div>
+                                    <label class="block font-bold mb-1">Nama Lengkap</label>
+                                    <input type="text" placeholder="Sesuai KTP" required class="w-full p-2.5 rounded-lg border dark:bg-gray-900 outline-none">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block font-bold mb-1">Nomor WhatsApp (Untuk Notifikasi)</label>
+                                <input type="tel" placeholder="08xxxxxxxxxx" required class="w-full p-2.5 rounded-lg border dark:bg-gray-900 outline-none">
+                            </div>
+                            <div>
+                                <label class="block font-bold mb-1">Keperluan / Alasan Ajuan</label>
+                                <textarea rows="3" placeholder="Jelaskan secara singkat keperluan dokumen..." class="w-full p-2.5 rounded-lg border dark:bg-gray-900 outline-none"></textarea>
+                            </div>
+                            <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-3 rounded-xl transition shadow">
+                                <i class="fa-solid fa-paper-plane mr-2"></i> Kirim Permohonan Surat
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Tracking Status -->
+                    <div class="space-y-4">
+                        <div class="bg-gray-50 dark:bg-gray-800 p-6 rounded-2xl">
+                            <h3 class="font-bold text-sm text-gray-700 dark:text-gray-200 mb-3"><i class="fa-solid fa-magnifying-glass text-brand-600"></i> Tracking Status Surat</h3>
+                            <input type="text" placeholder="Masukkan Kode Resi (cth: SR-9082)" class="w-full p-2 text-xs border rounded-lg mb-2 dark:bg-gray-900">
+                            <button class="w-full bg-gray-800 text-white font-bold py-2 rounded-lg text-xs hover:bg-gray-900">Cek Status</button>
+                        </div>
+
+                        <div class="bg-brand-50 dark:bg-gray-800 p-4 rounded-2xl border border-brand-200 text-xs space-y-2">
+                            <div class="font-bold text-brand-800 dark:text-brand-400"><i class="fa-solid fa-qrcode mr-1"></i> Verifikasi Keabsahan QR Code</div>
+                            <p class="text-gray-600 dark:text-gray-300">Seluruh dokumen yang diterbitkan telah dilengkapi dengan Tanda Tangan Elektronik & QR Code sah dari Pemerintah Desa Siraman.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB: TRANSPARANSI ANGGARAN -->
+        <section id="tab-anggaran" class="tab-content hidden space-y-8">
+            <div class="bg-white dark:bg-darkcard p-8 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
+                <h2 class="text-2xl font-bold mb-4 flex items-center gap-2"><i class="fa-solid fa-coins text-amber-500"></i> Transparansi APBDes & Realisasi Anggaran 2026</h2>
+                <div class="grid md:grid-cols-3 gap-6">
+                    <div class="bg-emerald-50 dark:bg-gray-800 p-4 rounded-xl border-l-4 border-emerald-500">
+                        <div class="text-xs text-gray-500">Pendapatan Desa</div>
+                        <div class="text-2xl font-black text-emerald-600">Rp 1.850.000.000</div>
+                    </div>
+                    <div class="bg-blue-50 dark:bg-gray-800 p-4 rounded-xl border-l-4 border-blue-500">
+                        <div class="text-xs text-gray-500">Belanja Pembangunan</div>
+                        <div class="text-2xl font-black text-blue-600">Rp 1.120.000.000</div>
+                    </div>
+                    <div class="bg-purple-50 dark:bg-gray-800 p-4 rounded-xl border-l-4 border-purple-500">
+                        <div class="text-xs text-gray-500">Pemberdayaan & Bantuan</div>
+                        <div class="text-2xl font-black text-purple-600">Rp 430.000.000</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB: PEMBANGUNAN -->
+        <section id="tab-pembangunan" class="tab-content hidden space-y-8">
+            <div class="bg-white dark:bg-darkcard p-8 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
+                <h2 class="text-2xl font-bold mb-6 flex items-center gap-2"><i class="fa-solid fa-helmet-safety text-brand-600"></i> Proyek & Infrastruktur Desa</h2>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="border rounded-xl p-4 bg-gray-50 dark:bg-gray-800 space-y-2">
+                        <span class="bg-blue-100 text-blue-700 text-[10px] px-2 py-0.5 rounded font-bold">Progres 85%</span>
+                        <h4 class="font-bold text-sm">Pengaspalan Jalan Usaha Tani Dusun Seneng</h4>
+                        <p class="text-xs text-gray-500">Nilai Anggaran: Rp 120.000.000 (Dana Desa 2026)</p>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-brand-600 h-2 rounded-full" style="width: 85%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB: UMKM & POTENSI -->
+        <section id="tab-umkm-potensi" class="tab-content hidden space-y-8">
+            <div class="bg-white dark:bg-darkcard p-8 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
+                <h2 class="text-2xl font-bold mb-6 flex items-center gap-2"><i class="fa-solid fa-store text-brand-600"></i> Siraman Smart UMKM & Potensi Lokal</h2>
+                <div class="grid sm:grid-cols-3 gap-6">
+                    <div class="border rounded-xl overflow-hidden shadow-sm">
+                        <div class="h-32 bg-gray-200">
+                            <img src="https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=400&q=80" class="w-full h-full object-cover">
+                        </div>
+                        <div class="p-4">
+                            <span class="text-[10px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded">Kuliner Unggulan</span>
+                            <h4 class="font-bold text-sm mt-1">Keripik Tempe Mbok Yem</h4>
+                            <p class="text-xs text-gray-500 mt-1">Oleh-oleh khas Dusun Tegalmulyo, renyah tanpa pengawet.</p>
+                            <button class="mt-3 w-full bg-brand-600 text-white text-xs font-bold py-1.5 rounded-lg"><i class="fa-brands fa-whatsapp mr-1"></i> Hubungi Penjual</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB: PENGADUAN / SMART COMPLAINT -->
+        <section id="tab-pengaduan" class="tab-content hidden space-y-8">
+            <div class="bg-white dark:bg-darkcard p-8 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
+                <h2 class="text-2xl font-bold mb-4 flex items-center gap-2"><i class="fa-solid fa-comments text-red-600"></i> Siraman Smart Complaint (Pengaduan Warga)</h2>
+                <form class="space-y-3 max-w-xl text-xs">
+                    <div>
+                        <label class="block font-bold mb-1">Kategori Laporan</label>
+                        <select class="w-full p-2.5 rounded-lg border dark:bg-gray-900">
+                            <option>Kerusakan Jalan / Fasilitas Umum</option>
+                            <option>Lampu Penerangan Jalan Mati</option>
+                            <option>Masalah Sampah & Kebersihan</option>
+                            <option>Keamanan & Ketertiban</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-bold mb-1">Deskripsi Laporan</label>
+                        <textarea rows="3" placeholder="Tuliskan lokasi dan rincian masalah..." class="w-full p-2.5 rounded-lg border dark:bg-gray-900"></textarea>
+                    </div>
+                    <div>
+                        <label class="block font-bold mb-1">Upload Foto Bukti</label>
+                        <input type="file" class="w-full p-2 border rounded-lg">
+                    </div>
+                    <button type="button" onclick="alert('Laporan pengaduan berhasil dikirim ke Admin Desa!')" class="bg-red-600 text-white font-bold px-6 py-2.5 rounded-xl hover:bg-red-700">Kirim Laporan</button>
+                </form>
+            </div>
+        </section>
+
+        <!-- TAB: SMART ECOSYSTEM OVERVIEW -->
+        <section id="tab-smart-ecosystem" class="tab-content hidden space-y-8">
+            <div class="bg-gradient-to-br from-indigo-900 to-slate-900 text-white p-8 rounded-2xl shadow-2xl">
+                <h2 class="text-3xl font-black mb-2 flex items-center gap-3"><i class="fa-solid fa-bolt text-yellow-400"></i> Siraman Smart Ecosystem Hub</h2>
+                <p class="text-sm text-indigo-200 mb-8">Satu Pintu Layanan Terpadu Berbasis Digital untuk Seluruh Sektor Desa Siraman</p>
+
+                <div class="grid sm:grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="bg-white/10 backdrop-blur-lg p-5 rounded-xl border border-white/10 hover:border-brand-400 transition">
+                        <div class="text-3xl mb-2">🛠️</div>
+                        <h4 class="font-bold text-sm">Siraman Smart Service</h4>
+                        <p class="text-[11px] text-gray-300 mt-1">Layanan administrasi & surat digital 24 jam</p>
+                    </div>
+                    <div class="bg-white/10 backdrop-blur-lg p-5 rounded-xl border border-white/10 hover:border-brand-400 transition">
+                        <div class="text-3xl mb-2">📊</div>
+                        <h4 class="font-bold text-sm">Siraman Smart Dashboard</h4>
+                        <p class="text-[11px] text-gray-300 mt-1">Monitoring real-time data kependudukan & keuangan</p>
+                    </div>
+                    <div class="bg-white/10 backdrop-blur-lg p-5 rounded-xl border border-white/10 hover:border-brand-400 transition">
+                        <div class="text-3xl mb-2">🚨</div>
+                        <h4 class="font-bold text-sm">Siraman Smart Emergency</h4>
+                        <p class="text-[11px] text-gray-300 mt-1">Tombol cepat siaga bencana & darurat medis</p>
+                    </div>
+                    <div class="bg-white/10 backdrop-blur-lg p-5 rounded-xl border border-white/10 hover:border-brand-400 transition">
+                        <div class="text-3xl mb-2">🌾</div>
+                        <h4 class="font-bold text-sm">Siraman Smart Agriculture</h4>
+                        <p class="text-[11px] text-gray-300 mt-1">Informasi cuaca, harga panen, & alokasi pupuk</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB: ADMIN DASHBOARD (Protected View) -->
+        <section id="tab-admin-dashboard" class="tab-content hidden space-y-8">
+            <div class="bg-slate-900 text-white p-8 rounded-2xl shadow-xl space-y-6">
+                <div class="flex justify-between items-center border-b border-slate-800 pb-4">
+                    <div>
+                        <h2 class="text-2xl font-bold flex items-center gap-2"><i class="fa-solid fa-gauge-high text-amber-400"></i> Executive Admin Command Center</h2>
+                        <p class="text-xs text-slate-400">Panel Kelola Internal Administrator Desa Siraman</p>
+                    </div>
+                    <span class="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs px-3 py-1 rounded-full font-bold">Multi-User Admin: Online</span>
+                </div>
+
+                <!-- Admin Management Grid -->
+                <div class="grid md:grid-cols-4 gap-4 text-xs">
+                    <button class="bg-slate-800 hover:bg-slate-700 p-4 rounded-xl text-left border border-slate-700 transition space-y-1">
+                        <i class="fa-solid fa-file-invoice text-brand-400 text-xl"></i>
+                        <div class="font-bold text-sm">Kelola Surat Masuk</div>
+                        <div class="text-slate-400">5 Permohonan Menunggu</div>
+                    </button>
+                    <button class="bg-slate-800 hover:bg-slate-700 p-4 rounded-xl text-left border border-slate-700 transition space-y-1">
+                        <i class="fa-solid fa-bullhorn text-red-400 text-xl"></i>
+                        <div class="font-bold text-sm">Kelola Pengaduan</div>
+                        <div class="text-slate-400">2 Laporan Baru</div>
+                    </button>
+                    <button class="bg-slate-800 hover:bg-slate-700 p-4 rounded-xl text-left border border-slate-700 transition space-y-1">
+                        <i class="fa-solid fa-newspaper text-blue-400 text-xl"></i>
+                        <div class="font-bold text-sm">Kelola Berita & Agenda</div>
+                        <div class="text-slate-400">Publikasi Konten</div>
+                    </button>
+                    <button class="bg-slate-800 hover:bg-slate-700 p-4 rounded-xl text-left border border-slate-700 transition space-y-1">
+                        <i class="fa-solid fa-users-gear text-purple-400 text-xl"></i>
+                        <div class="font-bold text-sm">Kelola Penduduk & RT/RW</div>
+                        <div class="text-slate-400">Update Data Master</div>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Floating Chatbot AI Widget -->
+    <div class="fixed bottom-6 right-6 z-50">
+        <button onclick="toggleChatbot()" class="bg-brand-600 hover:bg-brand-700 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center text-2xl transition-transform hover:scale-105">
+            <i class="fa-solid fa-robot"></i>
+        </button>
+        <!-- Chat Box -->
+        <div id="chatbot-box" class="hidden absolute bottom-16 right-0 w-80 bg-white dark:bg-darkcard rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 overflow-hidden text-xs">
+            <div class="bg-brand-600 text-white p-3 font-bold flex justify-between items-center">
+                <span><i class="fa-solid fa-bot mr-1"></i> Siraman AI Assistant</span>
+                <button onclick="toggleChatbot()" class="text-white hover:text-gray-200"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="p-4 h-64 overflow-y-auto space-y-3" id="chat-messages">
+                <div class="bg-gray-100 dark:bg-gray-800 p-2.5 rounded-lg max-w-[85%]">
+                    Halo Warga Siraman! Ada yang bisa saya bantu terkait permohonan surat, berita, atau informasi desa?
+                </div>
+            </div>
+            <div class="p-2 border-t border-gray-100 dark:border-gray-800 flex gap-2">
+                <input type="text" id="chat-input" placeholder="Tanyakan sesuatu..." class="w-full p-2 bg-gray-100 dark:bg-gray-800 rounded-lg outline-none text-xs">
+                <button onclick="sendChatMessage()" class="bg-brand-600 text-white px-3 rounded-lg font-bold"><i class="fa-solid fa-paper-plane"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        // Dark Mode Toggle
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+            const themeIcon = document.getElementById('theme-icon');
+            const themeText = document.getElementById('theme-text');
+            if (document.documentElement.classList.contains('dark')) {
+                themeIcon.className = 'fa-solid fa-sun';
+                themeText.innerText = 'Mode Terang';
+            } else {
+                themeIcon.className = 'fa-solid fa-moon';
+                themeText.innerText = 'Mode Gelap';
+            }
+        }
+
+        // Tab Switcher
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            const target = document.getElementById('tab-' + tabId);
+            if (target) {
+                target.classList.remove('hidden');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        // Admin Toggle Simulation
+        let isAdmin = false;
+        function toggleAdminView() {
+            if (!isAdmin) {
+                const pass = prompt('Masukkan Password Admin Desa: (Gunakan demo: admin123)');
+                if (pass === 'admin123') {
+                    isAdmin = true;
+                    document.getElementById('access-label').innerText = 'Mode Publik';
+                    document.getElementById('admin-indicator').classList.remove('hidden');
+                    alert('Berhasil Login sebagai Administrator Desa Siraman!');
+                    switchTab('admin-dashboard');
+                } else {
+                    alert('Password Salah!');
+                }
+            } else {
+                isAdmin = false;
+                document.getElementById('access-label').innerText = 'Login Admin';
+                document.getElementById('admin-indicator').classList.add('hidden');
+                switchTab('beranda');
+            }
+        }
+
+        // Chatbot Toggle
+        function toggleChatbot() {
+            const box = document.getElementById('chatbot-box');
+            box.classList.toggle('hidden');
+        }
+
+        function sendChatMessage() {
+            const input = document.getElementById('chat-input');
+            const msg = input.value.trim();
+            if (!msg) return;
+
+            const container = document.getElementById('chat-messages');
+            container.innerHTML += `<div class="bg-brand-600 text-white p-2.5 rounded-lg max-w-[85%] ml-auto">${msg}</div>`;
+            input.value = '';
+
+            setTimeout(() => {
+                container.innerHTML += `<div class="bg-gray-100 dark:bg-gray-800 p-2.5 rounded-lg max-w-[85%]">Terima kasih atas pertanyaannya. Untuk informasi lengkap mengenai "${msg}", silakan akses menu Layanan Surat atau Pengaduan di portal ini.</div>`;
+                container.scrollTop = container.scrollHeight;
+            }, 600);
+        }
+
+        function submitSurat(e) {
+            e.preventDefault();
+            alert('Permohonan surat berhasil dikirim! Kode Tracking Anda: SR-' + Math.floor(1000 + Math.random() * 9000));
+        }
+
+        // Initialize Charts
+        window.onload = function() {
+            // Age Chart
+            const ctx1 = document.getElementById('ageChart').getContext('2d');
+            new Chart(ctx1, {
+                type: 'doughnut',
+                data: {
+                    labels: ['0-14 Thn', '15-64 Thn (Produktif)', '65+ Thn'],
+                    datasets: [{
+                        data: [1120, 3100, 600],
+                        backgroundColor: ['#3b82f6', '#22c55e', '#f59e0b']
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            // Job Chart
+            const ctx2 = document.getElementById('jobChart').getContext('2d');
+            new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: ['Petani', 'Pedagang/UMKM', 'PNS/TNI/Polri', 'Karyawan Swasta', 'Lainnya'],
+                    datasets: [{
+                        label: 'Jumlah Penduduk',
+                        data: [1850, 920, 310, 1140, 600],
+                        backgroundColor: '#16a34a'
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        };
+    </script>
+</body>
+</html>
