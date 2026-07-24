@@ -64,13 +64,12 @@
 
   <!-- React Application Script -->
   <script type="text/babel" data-type="module">
-    // Firebase Modular SDK v10 via CDN
+    // Firebase Modular SDK v10 (Pure Firestore & Auth)
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getFirestore, collection, addDoc, getDocs, doc, deleteDoc, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-    import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
-    // 🔑 KONFIGURASI FIREBASE ANDA
+    // 🔑 KONFIGURASI FIREBASE
     const firebaseConfig = {
       apiKey: "AIzaSyBJHvVWe9zT2mdku3s5TP_KyJEEn8XF6So",
       authDomain: "siraman-digital.firebaseapp.com",
@@ -85,18 +84,48 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
-    const storage = getStorage(app);
 
     const { useState, useEffect } = React;
 
+    // HELPER: Kompresi & Konversi Gambar File ke Text Base64
+    const convertFileToBase64 = (file) => {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+          const img = new Image();
+          img.src = event.target.result;
+          img.onload = () => {
+            // Kompres ukuran gambar agar muat di Firestore (max 1000px)
+            const canvas = document.createElement('canvas');
+            const MAX_WIDTH = 1000;
+            const scaleFactor = MAX_WIDTH / img.width;
+            
+            if (img.width > MAX_WIDTH) {
+              canvas.width = MAX_WIDTH;
+              canvas.height = img.height * scaleFactor;
+            } else {
+              canvas.width = img.width;
+              canvas.height = img.height;
+            }
+
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            // Convert ke Teks Base64 kualitas JPG 0.7
+            const base64String = canvas.toDataURL('image/jpeg', 0.7);
+            resolve(base64String);
+          };
+        };
+        reader.onerror = (error) => reject(error);
+      });
+    };
+
     // --- UTAMA: APP COMPONENT ---
     function App() {
-      const [view, setView] = useState('public'); // 'public' | 'login' | 'admin'
+      const [view, setView] = useState('public'); 
       const [user, setUser] = useState(null);
       const [darkMode, setDarkMode] = useState(true);
-      const [loading, setLoading] = useState(false);
       
-      // Data States
       const [berita, setBerita] = useState([]);
       const [aspirasi, setAspirasi] = useState([]);
       const [heroData, setHeroData] = useState({
@@ -105,13 +134,11 @@
         bgUrl: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=1200&q=80"
       });
 
-      // Dark Mode Effect
       useEffect(() => {
         if (darkMode) document.documentElement.classList.add('dark');
         else document.documentElement.classList.remove('dark');
       }, [darkMode]);
 
-      // Firebase Auth Listener
       useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
           setUser(currentUser);
@@ -120,33 +147,27 @@
         return () => unsubscribe();
       }, [view]);
 
-      // Fetch Data Firestore
       useEffect(() => {
         fetchData();
       }, []);
 
       const fetchData = async () => {
-        setLoading(true);
         try {
-          // Get Berita
           const beritaSnap = await getDocs(query(collection(db, "berita"), orderBy("createdAt", "desc")));
           const beritaList = beritaSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
           setBerita(beritaList);
 
-          // Get Aspirasi
           const aspirasiSnap = await getDocs(query(collection(db, "aspirasi"), orderBy("createdAt", "desc")));
           const aspirasiList = aspirasiSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
           setAspirasi(aspirasiList);
         } catch (err) {
-          console.log("Menunggu data Firestore disinkronkan...");
-        } finally {
-          setLoading(false);
+          console.log("Menunggu sinkronisasi database...");
         }
       };
 
       return (
         <div className="min-h-screen flex flex-col">
-          {/* NAVBAR UTAMA */}
+          {/* NAVBAR */}
           <nav className="fixed top-0 w-full z-50 glass-card px-4 py-3 border-b border-slate-200/50 dark:border-slate-800/50">
             <div className="max-w-7xl mx-auto flex justify-between items-center">
               <div onClick={() => setView('public')} className="flex items-center gap-3 cursor-pointer">
@@ -194,7 +215,7 @@
             </div>
           </nav>
 
-          {/* SYSTEM TAMPILAN DINAMIS */}
+          {/* MAIN CONTAINER */}
           <main className="flex-grow pt-20">
             {view === 'public' && <PublicView heroData={heroData} berita={berita} fetchData={fetchData} />}
             {view === 'login' && <LoginView setView={setView} />}
@@ -209,16 +230,14 @@
             )}
           </main>
 
-          {/* FOOTER */}
           <footer className="border-t border-slate-200 dark:border-slate-800/80 py-8 text-center text-xs text-slate-500 dark:text-slate-400 bg-white/50 dark:bg-slate-950/50 backdrop-blur-md">
             <p>© 2026 Siraman Digital - Kelurahan Siraman. All rights reserved.</p>
-            <p className="mt-1 text-[11px] text-slate-400">Dioptimalkan untuk performa tinggi, PWA & Firebase Cloud Database.</p>
           </footer>
         </div>
       );
     }
 
-    // --- 1. PUBLIK VIEW (TAMPILAN DEPAN) ---
+    // --- 1. TAMPILAN PUBLIK ---
     function PublicView({ heroData, berita, fetchData }) {
       const [formData, setFormData] = useState({ nama: '', padukuhan: '', hp: '', kategori: 'Infrastruktur', isi: '' });
       const [submitting, setSubmitting] = useState(false);
@@ -233,11 +252,11 @@
             status: "Baru",
             createdAt: serverTimestamp()
           });
-          setMsg("✅ Terima kasih! Aspirasi Anda berhasil terkirim dan disimpan di database.");
+          setMsg("✅ Terima kasih! Aspirasi Anda berhasil disimpan.");
           setFormData({ nama: '', padukuhan: '', hp: '', kategori: 'Infrastruktur', isi: '' });
           fetchData();
         } catch (err) {
-          setMsg("❌ Gagal mengirim. Pastikan Firestore rules Anda sudah dikonfigurasi.");
+          setMsg("❌ Gagal mengirim aspirasi.");
         } finally {
           setSubmitting(false);
         }
@@ -245,7 +264,7 @@
 
       return (
         <div className="space-y-16 pb-16">
-          {/* HERO BANNER BER-BACKGROUND */}
+          {/* HERO BANNER */}
           <section className="relative px-4 pt-8 pb-12 max-w-7xl mx-auto">
             <div 
               className="relative rounded-3xl overflow-hidden p-8 md:p-16 border border-slate-200/50 dark:border-slate-800 shadow-2xl bg-cover bg-center transition-all duration-500 min-h-[440px] flex items-center"
@@ -273,7 +292,7 @@
             </div>
           </section>
 
-          {/* DOKUMEN / BERITA & ARTIKEL */}
+          {/* LIST BERITA */}
           <section id="berita" className="max-w-7xl mx-auto px-4">
             <div className="flex justify-between items-end mb-8">
               <div>
@@ -284,7 +303,7 @@
 
             {berita.length === 0 ? (
               <div className="text-center py-12 glass-card rounded-3xl border border-dashed border-slate-300 dark:border-slate-800">
-                <p className="text-sm text-slate-500">Belum ada berita dipublikasikan. Silakan posting melalui Panel Admin.</p>
+                <p className="text-sm text-slate-500">Belum ada berita dipublikasikan.</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -302,12 +321,12 @@
             )}
           </section>
 
-          {/* FORM ASPIRASI MASYARAKAT */}
+          {/* FORM ASPIRASI */}
           <section id="aspirasi" className="max-w-3xl mx-auto px-4">
             <div className="glass-card p-8 md:p-10 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800">
               <div className="text-center space-y-2 mb-8">
                 <h2 className="text-2xl font-bold">Kanal Aspirasi Warga</h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Sampaikan saran, laporan, atau pertanyaan kamu langsung kepada perangkat desa.</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Sampaikan saran atau laporan kamu langsung kepada perangkat desa.</p>
               </div>
 
               {msg && <div className="mb-6 p-4 rounded-2xl bg-brand-500/10 border border-brand-500/20 text-brand-500 text-xs font-medium text-center">{msg}</div>}
@@ -315,23 +334,23 @@
               <form onSubmit={handleAspirasiSubmit} className="space-y-4 text-xs">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block font-medium mb-1 text-slate-700 dark:text-slate-300">Nama Lengkap *</label>
-                    <input required type="text" value={formData.nama} onChange={e => setFormData({...formData, nama: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-transparent focus:ring-2 focus:ring-brand-500 outline-none" placeholder="Masukkan nama Anda" />
+                    <label className="block font-medium mb-1">Nama Lengkap *</label>
+                    <input required type="text" value={formData.nama} onChange={e => setFormData({...formData, nama: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-transparent outline-none focus:ring-2 focus:ring-brand-500" placeholder="Masukkan nama" />
                   </div>
                   <div>
-                    <label className="block font-medium mb-1 text-slate-700 dark:text-slate-300">Padukuhan *</label>
-                    <input required type="text" value={formData.padukuhan} onChange={e => setFormData({...formData, padukuhan: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-transparent focus:ring-2 focus:ring-brand-500 outline-none" placeholder="Contoh: Seneng / Siraman" />
+                    <label className="block font-medium mb-1">Padukuhan *</label>
+                    <input required type="text" value={formData.padukuhan} onChange={e => setFormData({...formData, padukuhan: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-transparent outline-none focus:ring-2 focus:ring-brand-500" placeholder="Contoh: Seneng" />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block font-medium mb-1 text-slate-700 dark:text-slate-300">Nomor WhatsApp (Opsional)</label>
-                    <input type="text" value={formData.hp} onChange={e => setFormData({...formData, hp: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-transparent focus:ring-2 focus:ring-brand-500 outline-none" placeholder="0812xxxxxxx" />
+                    <label className="block font-medium mb-1">Nomor WhatsApp</label>
+                    <input type="text" value={formData.hp} onChange={e => setFormData({...formData, hp: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-transparent outline-none focus:ring-2 focus:ring-brand-500" placeholder="0812xxxxxxx" />
                   </div>
                   <div>
-                    <label className="block font-medium mb-1 text-slate-700 dark:text-slate-300">Kategori</label>
-                    <select value={formData.kategori} onChange={e => setFormData({...formData, kategori: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-transparent dark:bg-slate-900 focus:ring-2 focus:ring-brand-500 outline-none">
+                    <label className="block font-medium mb-1">Kategori</label>
+                    <select value={formData.kategori} onChange={e => setFormData({...formData, kategori: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-transparent dark:bg-slate-900 outline-none">
                       <option value="Infrastruktur">Infrastruktur & Jalan</option>
                       <option value="Pelayanan">Pelayanan Publik</option>
                       <option value="Kesehatan">Kesehatan & Sosial</option>
@@ -342,12 +361,12 @@
                 </div>
 
                 <div>
-                  <label className="block font-medium mb-1 text-slate-700 dark:text-slate-300">Isi Aspirasi *</label>
-                  <textarea required rows="4" value={formData.isi} onChange={e => setFormData({...formData, isi: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-transparent focus:ring-2 focus:ring-brand-500 outline-none" placeholder="Tuliskan rincian aspirasi atau usulan Anda secara mendalam..."></textarea>
+                  <label className="block font-medium mb-1">Isi Aspirasi *</label>
+                  <textarea required rows="4" value={formData.isi} onChange={e => setFormData({...formData, isi: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-transparent outline-none focus:ring-2 focus:ring-brand-500" placeholder="Tuliskan isi aspirasi..."></textarea>
                 </div>
 
                 <button type="submit" disabled={submitting} className="w-full py-3.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-semibold shadow-lg shadow-brand-600/30 transition disabled:opacity-50">
-                  {submitting ? 'Mengirim Data...' : 'Kirim Aspirasi Sekarang'}
+                  {submitting ? 'Mengirim Data...' : 'Kirim Aspirasi'}
                 </button>
               </form>
             </div>
@@ -356,7 +375,7 @@
       );
     }
 
-    // --- 2. HALAMAN LOGIN ADMIN ---
+    // --- 2. LOGIN ADMIN ---
     function LoginView({ setView }) {
       const [email, setEmail] = useState('');
       const [password, setPassword] = useState('');
@@ -371,7 +390,7 @@
           await signInWithEmailAndPassword(auth, email, password);
           setView('admin');
         } catch (error) {
-          setErr("Login gagal. Pastikan Email & Password Admin terdaftar di Firebase Auth.");
+          setErr("Login gagal. Periksa email & password.");
         } finally {
           setLoading(false);
         }
@@ -407,65 +426,66 @@
       );
     }
 
-    // --- 3. PANEL DASHBOARD ADMIN ---
+    // --- 3. DASHBOARD ADMIN (KONVERSI FOTO KE TEXT BASE64) ---
     function AdminDashboard({ heroData, setHeroData, berita, aspirasi, fetchData }) {
-      const [tab, setTab] = useState('berita'); // 'berita' | 'hero' | 'aspirasi'
+      const [tab, setTab] = useState('berita');
       
-      // State Form Berita
+      // State Berita
       const [judul, setJudul] = useState('');
       const [isi, setIsi] = useState('');
       const [kategori, setKategori] = useState('Pengumuman');
       const [imageFile, setImageFile] = useState(null);
-      const [uploading, setUploading] = useState(false);
+      const [processing, setProcessing] = useState(false);
 
-      // State Form Hero Background
+      // State Hero Background
       const [bgFile, setBgFile] = useState(null);
       const [bgTitle, setBgTitle] = useState(heroData.title);
 
-      // Upload & Publikasi Berita
+      // PROSES SIMPAN BERITA (Ubah File Foto Jadi Teks Base64)
       const handleAddBerita = async (e) => {
         e.preventDefault();
-        setUploading(true);
+        setProcessing(true);
         try {
-          let imageUrl = '';
+          let base64Text = 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=600&q=80';
+          
           if (imageFile) {
-            const imageRef = ref(storage, `berita/${Date.now()}_${imageFile.name}`);
-            await uploadBytes(imageRef, imageFile);
-            imageUrl = await getDownloadURL(imageRef);
+            base64Text = await convertFileToBase64(imageFile);
           }
 
           await addDoc(collection(db, "berita"), {
-            judul, isi, kategori, imageUrl, createdAt: serverTimestamp()
+            judul, 
+            isi, 
+            kategori, 
+            imageUrl: base64Text, // Menyimpan teks string Base64 langsung di Firestore
+            createdAt: serverTimestamp()
           });
 
           setJudul(''); setIsi(''); setImageFile(null);
           fetchData();
-          alert("Berita berhasil di-upload ke Firebase dan diterbitkan!");
+          alert("Berita & foto berhasil dikonversi ke teks dan disimpan ke Firestore!");
         } catch (err) {
-          alert("Gagal mengunggah berita. Pastikan Firebase Storage & Firestore diizinkan.");
+          alert("Gagal memproses gambar. Pastikan ukuran foto tidak terlalu besar.");
         } finally {
-          setUploading(false);
+          setProcessing(false);
         }
       };
 
-      // Update Hero Background & Title
+      // PROSES SIMPAN BANNER HERO (Ubah Foto Banner Jadi Teks Base64)
       const handleUpdateHero = async (e) => {
         e.preventDefault();
-        setUploading(true);
+        setProcessing(true);
         try {
-          let bgUrl = heroData.bgUrl;
+          let base64Bg = heroData.bgUrl;
           if (bgFile) {
-            const bgRef = ref(storage, `hero/hero_bg_${Date.now()}`);
-            await uploadBytes(bgRef, bgFile);
-            bgUrl = await getDownloadURL(bgRef);
+            base64Bg = await convertFileToBase64(bgFile);
           }
 
-          setHeroData({ ...heroData, title: bgTitle, bgUrl });
-          alert("Foto Background Hero Banner berhasil diperbarui!");
+          setHeroData({ ...heroData, title: bgTitle, bgUrl: base64Bg });
+          alert("Background Hero berhasil diperbarui!");
         } catch (err) {
-          alert("Gagal memperbarui background.");
+          alert("Gagal mengompres background.");
         } finally {
-          setUploading(false);
+          setProcessing(false);
         }
       };
 
@@ -479,10 +499,9 @@
 
       return (
         <div className="max-w-7xl mx-auto px-4 pb-20">
-          {/* TAB SYSTEM */}
           <div className="flex flex-wrap gap-2 mb-8 border-b border-slate-200 dark:border-slate-800 pb-4">
             <button onClick={() => setTab('berita')} className={`px-4 py-2 rounded-xl text-xs font-semibold transition ${tab === 'berita' ? 'bg-brand-600 text-white' : 'glass-card'}`}>
-              📝 Kelola Berita ({berita.length})
+              📝 Posting Berita ({berita.length})
             </button>
             <button onClick={() => setTab('hero')} className={`px-4 py-2 rounded-xl text-xs font-semibold transition ${tab === 'hero' ? 'bg-brand-600 text-white' : 'glass-card'}`}>
               🖼️ Upload Background Hero
@@ -492,15 +511,15 @@
             </button>
           </div>
 
-          {/* TAB 1: POSTING & KELOLA BERITA */}
+          {/* TAB 1: UPLOAD FOTO BERITA VIA BASE64 */}
           {tab === 'berita' && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div className="glass-card p-6 rounded-3xl h-fit border border-slate-200 dark:border-slate-800 space-y-4">
-                <h3 className="font-bold text-base">Posting Berita / Pengumuman</h3>
+                <h3 className="font-bold text-base">Posting Berita</h3>
                 <form onSubmit={handleAddBerita} className="space-y-3 text-xs">
                   <div>
                     <label className="block mb-1 font-medium">Judul Berita</label>
-                    <input required type="text" value={judul} onChange={e => setJudul(e.target.value)} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-transparent outline-none focus:ring-2 focus:ring-brand-500" placeholder="Judul artikel" />
+                    <input required type="text" value={judul} onChange={e => setJudul(e.target.value)} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-transparent outline-none focus:ring-2 focus:ring-brand-500" placeholder="Judul artikel..." />
                   </div>
                   <div>
                     <label className="block mb-1 font-medium">Kategori</label>
@@ -511,15 +530,15 @@
                     </select>
                   </div>
                   <div>
-                    <label className="block mb-1 font-medium">Gambar Artikel (Upload Firebase)</label>
+                    <label className="block mb-1 font-medium">Pilih File Foto (Otomatis Di-convert Ke Teks)</label>
                     <input type="file" accept="image/*" onChange={e => setImageFile(e.target.files[0])} className="w-full text-xs text-slate-500 file:mr-2 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-brand-500/10 file:text-brand-500 font-semibold" />
                   </div>
                   <div>
                     <label className="block mb-1 font-medium">Isi Berita</label>
-                    <textarea required rows="4" value={isi} onChange={e => setIsi(e.target.value)} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-transparent outline-none focus:ring-2 focus:ring-brand-500" placeholder="Tulis ringkasan atau isi berita..."></textarea>
+                    <textarea required rows="4" value={isi} onChange={e => setIsi(e.target.value)} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-transparent outline-none focus:ring-2 focus:ring-brand-500" placeholder="Ringkasan berita..."></textarea>
                   </div>
-                  <button type="submit" disabled={uploading} className="w-full py-3 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-semibold transition">
-                    {uploading ? 'Mengunggah Foto ke Firebase...' : 'Terbitkan Berita'}
+                  <button type="submit" disabled={processing} className="w-full py-3 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-semibold transition disabled:opacity-50">
+                    {processing ? 'Mengompres & Menyimpan Foto...' : 'Terbitkan Berita'}
                   </button>
                 </form>
               </div>
@@ -530,7 +549,7 @@
                   {berita.map(item => (
                     <div key={item.id} className="glass-card p-4 rounded-2xl flex items-center justify-between gap-4 border border-slate-200 dark:border-slate-800">
                       <div className="flex items-center gap-4">
-                        <img src={item.imageUrl || 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=150&q=80'} className="w-16 h-16 rounded-xl object-cover" />
+                        <img src={item.imageUrl} className="w-16 h-16 rounded-xl object-cover" />
                         <div>
                           <h4 className="font-bold text-sm">{item.judul}</h4>
                           <span className="text-[10px] text-brand-500 font-semibold uppercase">{item.kategori}</span>
@@ -546,27 +565,27 @@
             </div>
           )}
 
-          {/* TAB 2: UPLOAD BACKGROUND BANNER */}
+          {/* TAB 2: UPLOAD BACKGROUND HERO VIA BASE64 */}
           {tab === 'hero' && (
             <div className="max-w-xl mx-auto glass-card p-8 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-6">
-              <h3 className="font-bold text-lg">Ganti Background & Judul Hero</h3>
+              <h3 className="font-bold text-lg">Ganti Background Hero Banner</h3>
               <form onSubmit={handleUpdateHero} className="space-y-4 text-xs">
                 <div>
-                  <label className="block mb-1 font-medium">Slogan / Judul Utama</label>
+                  <label className="block mb-1 font-medium">Judul Utama</label>
                   <input type="text" value={bgTitle} onChange={e => setBgTitle(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-transparent outline-none focus:ring-2 focus:ring-brand-500" />
                 </div>
                 <div>
-                  <label className="block mb-1 font-medium">Upload Foto Background Baru</label>
+                  <label className="block mb-1 font-medium">Pilih Foto Background dari HP / PC</label>
                   <input type="file" accept="image/*" onChange={e => setBgFile(e.target.files[0])} className="w-full text-xs text-slate-500 file:mr-2 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-brand-500/10 file:text-brand-500 font-semibold" />
                 </div>
-                <button type="submit" disabled={uploading} className="w-full py-3.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-semibold transition">
-                  {uploading ? 'Proses Upload...' : 'Simpan Perubahan Banner'}
+                <button type="submit" disabled={processing} className="w-full py-3.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-semibold transition disabled:opacity-50">
+                  {processing ? 'Memproses Foto...' : 'Simpan Background Baru'}
                 </button>
               </form>
             </div>
           )}
 
-          {/* TAB 3: DATA ASPIRASI WARGA */}
+          {/* TAB 3: ASPIRASI */}
           {tab === 'aspirasi' && (
             <div className="space-y-4">
               <h3 className="font-bold text-base">Kotak Masuk Aspirasi Masyarakat</h3>
@@ -592,7 +611,6 @@
       );
     }
 
-    // Render Aplikasi Ke Elemen DOM #root
     ReactDOM.createRoot(document.getElementById('root')).render(<App />);
   </script>
 </body>
