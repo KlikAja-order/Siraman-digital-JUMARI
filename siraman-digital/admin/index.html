@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard - Siraman Digital</title>
+  
+  <link rel="stylesheet" href="/assets/css/variables.css" />
+  <link rel="stylesheet" href="/assets/css/main.css" />
+  <link rel="stylesheet" href="/assets/css/components.css" />
+  
+  <style>
+    :root {
+      --sidebar-width: 260px;
+    }
+    body {
+      display: flex;
+      min-height: 100vh;
+      background-color: var(--bg-primary);
+    }
+    
+    /* Login Overlay */
+    #login-overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--bg-primary);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .login-card {
+      width: 100%;
+      max-width: 400px;
+      padding: 2rem;
+    }
+
+    /* Admin Layout */
+    .admin-sidebar {
+      width: var(--sidebar-width);
+      background: var(--bg-secondary);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      z-index: 100;
+      transition: transform 0.3s ease;
+    }
+    .admin-brand {
+      padding: 1.5rem;
+      font-size: 1.2rem;
+      font-weight: 700;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .admin-menu {
+      list-style: none;
+      padding: 1rem 0.75rem;
+      flex: 1;
+      overflow-y: auto;
+    }
+    .admin-menu li a {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      border-radius: var(--radius-md);
+      font-size: 0.9rem;
+      font-weight: 500;
+      margin-bottom: 0.25rem;
+      transition: all 0.2s ease;
+    }
+    .admin-menu li a:hover,
+    .admin-menu li a.active {
+      background: var(--accent-color);
+      color: #ffffff;
+    }
+    
+    .admin-main {
+      margin-left: var(--sidebar-width);
+      flex: 1;
+      padding: 2rem;
+      min-width: 0;
+    }
+    .admin-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+    
+    /* Stats Cards */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    .stat-card {
+      padding: 1.5rem;
+    }
+    .stat-number {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--accent-color);
+      margin-top: 0.5rem;
+    }
+
+    /* Modal Styling */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .modal-overlay.active {
+      display: flex;
+    }
+    .modal-content {
+      width: 100%;
+      max-width: 600px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    @media (max-width: 768px) {
+      .admin-sidebar {
+        transform: translateX(-100%);
+      }
+      .admin-sidebar.open {
+        transform: translateX(0);
+      }
+      .admin-main {
+        margin-left: 0;
+        padding: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 1. LOGIN OVERLAY -->
+  <div id="login-overlay">
+    <div class="glass-panel card login-card fade-in">
+      <h3 style="text-align: center; margin-bottom: 0.5rem;">Admin Siraman</h3>
+      <p style="text-align: center; color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1.5rem;">
+        Masukan akun kredensial untuk mengelola portal.
+      </p>
+      
+      <form id="form-login">
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label class="form-label">Email Admin</label>
+          <input type="email" id="login-email" class="form-input" required placeholder="admin@siraman.desa.id" />
+        </div>
+        <div class="form-group" style="margin-bottom: 1.5rem;">
+          <label class="form-label">Password</label>
+          <input type="password" id="login-password" class="form-input" required placeholder="••••••••" />
+        </div>
+        <button type="submit" id="btn-login" class="btn btn-primary" style="width: 100%;">Masuk Panel</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 2. FORCED CHANGE PASSWORD MODAL (Untuk First Login) -->
+  <div id="modal-change-password" class="modal-overlay">
+    <div class="glass-panel card modal-content">
+      <h3 style="margin-bottom: 0.5rem;">Keamanan Akun: Ubah Password</h3>
+      <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1.5rem;">
+        Demi keamanan, Anda diwajibkan mengganti password bawaan pada login pertama kali.
+      </p>
+      <form id="form-change-password">
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label class="form-label">Password Baru</label>
+          <input type="password" id="new-password" class="form-input" required minlength="6" placeholder="Minimal 6 karakter" />
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Simpan Password Baru</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 3. ADMIN SIDEBAR -->
+  <aside class="admin-sidebar" id="admin-sidebar">
+    <div class="admin-brand">
+      <span>🏛️</span>
+      <span>Admin Siraman</span>
+    </div>
+    <ul class="admin-menu">
+      <li><a href="#" class="nav-modul active" data-modul="dashboard"><span>📊</span> Dashboard</a></li>
+      <li><a href="#" class="nav-modul" data-modul="announcements"><span>📢</span> Pengumuman</a></li>
+      <li><a href="#" class="nav-modul" data-modul="news"><span>📰</span> Berita</a></li>
+      <li><a href="#" class="nav-modul" data-modul="programs"><span>📋</span> Program Kerja</a></li>
+      <li><a href="#" class="nav-modul" data-modul="gallery"><span>🖼️</span> Galeri Foto</a></li>
+      <li><a href="#" class="nav-modul" data-modul="events"><span>📅</span> Jadwal Kegiatan</a></li>
+      <li><a href="#" class="nav-modul" data-modul="faq"><span>❓</span> FAQ Warga</a></li>
+      <li><a href="#" class="nav-modul" data-modul="aspirations"><span>💬</span> Aspirasi Warga</a></li>
+      <li><a href="#" class="nav-modul" data-modul="profile"><span>👤</span> Profil Kalurahan</a></li>
+      <li><a href="#" class="nav-modul" data-modul="settings"><span>⚙️</span> Pengaturan Sistem</a></li>
+    </ul>
+    <div style="padding: 1rem; border-top: 1px solid var(--border-color);">
+      <button id="btn-logout" class="btn btn-danger" style="width: 100%;">🚪 Keluar</button>
+    </div>
+  </aside>
+
+  <!-- 4. MAIN CONTENT AREA -->
+  <main class="admin-main">
+    <header class="admin-header">
+      <div>
+        <h2 id="page-title">Dashboard Overview</h2>
+        <p style="color: var(--text-secondary); font-size: 0.85rem;" id="admin-user-info">Terhubung sebagai Admin</p>
+      </div>
+      <button id="theme-toggle-btn" class="btn btn-outline" style="padding: 0.5rem 0.75rem;">🌓</button>
+    </header>
+
+    <!-- CONTENT SECTION: DASHBOARD STATS -->
+    <section id="section-dashboard" class="modul-section">
+      <div class="stats-grid">
+        <div class="glass-panel card stat-card">
+          <div style="color: var(--text-secondary); font-size: 0.85rem;">Total Berita</div>
+          <div class="stat-number" id="stat-news">0</div>
+        </div>
+        <div class="glass-panel card stat-card">
+          <div style="color: var(--text-secondary); font-size: 0.85rem;">Aspirasi Masuk</div>
+          <div class="stat-number" id="stat-aspirations">0</div>
+        </div>
+        <div class="glass-panel card stat-card">
+          <div style="color: var(--text-secondary); font-size: 0.85rem;">Program Aktif</div>
+          <div class="stat-number" id="stat-programs">0</div>
+        </div>
+        <div class="glass-panel card stat-card">
+          <div style="color: var(--text-secondary); font-size: 0.85rem;">Foto Galeri</div>
+          <div class="stat-number" id="stat-gallery">0</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- DYNAMIC DATA TABLE / FORM CONTAINER -->
+    <section id="section-crud" class="modul-section" style="display: none;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h3 id="crud-title">Kelola Data</h3>
+        <button id="btn-add-new" class="btn btn-primary">+ Tambah Data Baru</button>
+      </div>
+
+      <div class="glass-panel card" style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+          <thead>
+            <tr style="border-bottom: 1px solid var(--border-color);">
+              <th style="padding: 1rem;">No</th>
+              <th style="padding: 1rem;">Judul / Nama</th>
+              <th style="padding: 1rem;">Tanggal / Status</th>
+              <th style="padding: 1rem; text-align: right;">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="table-body">
+            <!-- Dynamic rows -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <!-- 5. DYNAMIC FORM MODAL (FOR CRUD) -->
+  <div id="modal-crud" class="modal-overlay">
+    <div class="glass-panel card modal-content">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h3 id="modal-form-title">Form Data</h3>
+        <button id="btn-close-modal" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-primary);">&times;</button>
+      </div>
+      <form id="dynamic-form">
+        <div id="form-fields-container">
+          <!-- Dynamic Input Fields Injection -->
+        </div>
+        <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: flex-end;">
+          <button type="button" id="btn-cancel-form" class="btn btn-outline">Batal</button>
+          <button type="submit" id="btn-save-form" class="btn btn-primary">Simpan Data</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <!-- SCRIPTS -->
+  <script type="module" src="/assets/js/admin-app.js"></script>
+</body>
+</html>
