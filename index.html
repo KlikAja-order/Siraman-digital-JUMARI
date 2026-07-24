@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>E-Gov Siraman by Jumari - Portal Layanan & Transparansi Desa</title>
+  <title>E-Gov Siraman by Jumari - Portal Resmi Pelayanan & Transparansi Kelurahan</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -17,12 +17,12 @@
         extend: {
           colors: {
             brand: {
-              50: '#f0f9ff', 100: '#e0f2fe', 500: '#0ea5e9', 600: '#0284c7', 700: '#0369a1', 900: '#0c4a6e'
+              50: '#f0f9ff', 100: '#e0f2fe', 400: '#38bdf8', 500: '#0ea5e9', 600: '#0284c7', 700: '#0369a1', 900: '#0c4a6e'
             },
             accent: {
-              500: '#10b981', 600: '#059669'
+              400: '#34d399', 500: '#10b981', 600: '#059669'
             },
-            darkbg: '#090d16'
+            darkbg: '#080c14'
           },
           fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'] }
         }
@@ -35,7 +35,7 @@
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
   <style>
-    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #090d16; color: #f8fafc; }
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #080c14; color: #f8fafc; }
     .glass-panel {
       background: rgba(15, 23, 42, 0.75);
       backdrop-filter: blur(16px);
@@ -43,7 +43,7 @@
       border: 1px solid rgba(255, 255, 255, 0.08);
     }
     .glass-card {
-      background: rgba(30, 41, 59, 0.5);
+      background: rgba(30, 41, 59, 0.4);
       backdrop-filter: blur(12px);
       border: 1px solid rgba(255, 255, 255, 0.05);
     }
@@ -77,7 +77,7 @@
 
     const { useState, useEffect } = React;
 
-    // Helper: Kompresi Foto ke Base64 (Maksimal 800px)
+    // Helper: Compress Image to Base64
     const convertFileToBase64 = (file) => {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -87,7 +87,7 @@
           img.src = event.target.result;
           img.onload = () => {
             const canvas = document.createElement('canvas');
-            const MAX_WIDTH = 800;
+            const MAX_WIDTH = 900;
             let width = img.width;
             let height = img.height;
 
@@ -100,7 +100,7 @@
             canvas.height = height;
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, width, height);
-            resolve(canvas.toDataURL('image/jpeg', 0.6));
+            resolve(canvas.toDataURL('image/jpeg', 0.7));
           };
           img.onerror = (err) => reject(err);
         };
@@ -109,12 +109,13 @@
     };
 
     function App() {
-      const [view, setView] = useState('home'); // home, layanan, berita, transparansi, kependudukan, saran, login, admin
+      const [view, setView] = useState('home'); 
       const [user, setUser] = useState(null);
       
       const [berita, setBerita] = useState([]);
       const [layanan, setLayanan] = useState([]);
       const [saran, setSaran] = useState([]);
+      const [loadingData, setLoadingData] = useState(true);
 
       useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -127,23 +128,37 @@
         fetchData();
       }, []);
 
+      // PERBAIKAN UTAMA: Penanganan Fetch Data Berita & Realtime Safe Array
       const fetchData = async () => {
+        setLoadingData(true);
         try {
+          // Fetch Berita
           const beritaSnap = await getDocs(collection(db, "berita"));
-          setBerita(beritaSnap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => (b.timestamp||0)-(a.timestamp||0)));
+          const beritaList = beritaSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+          beritaList.sort((a,b) => (b.timestamp || 0) - (a.timestamp || 0));
+          setBerita(beritaList);
 
+          // Fetch Permohonan Layanan
           const layananSnap = await getDocs(collection(db, "layanan"));
-          setLayanan(layananSnap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => (b.timestamp||0)-(a.timestamp||0)));
+          const layananList = layananSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+          layananList.sort((a,b) => (b.timestamp || 0) - (a.timestamp || 0));
+          setLayanan(layananList);
 
+          // Fetch Saran
           const saranSnap = await getDocs(collection(db, "saran"));
-          setSaran(saranSnap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => (b.timestamp||0)-(a.timestamp||0)));
+          const saranList = saranSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+          saranList.sort((a,b) => (b.timestamp || 0) - (a.timestamp || 0));
+          setSaran(saranList);
+
         } catch (e) {
-          console.error("Gagal load data Firestore:", e);
+          console.error("Gagal sinkronisasi data dari Firestore:", e);
+        } finally {
+          setLoadingData(false);
         }
       };
 
       return (
-        <div className="min-h-screen flex flex-col bg-[#090d16] text-slate-100">
+        <div className="min-h-screen flex flex-col bg-[#080c14] text-slate-100">
           {/* Header Navigation */}
           <nav className="fixed top-0 w-full z-50 glass-panel px-4 py-3 border-b border-slate-800">
             <div className="max-w-7xl mx-auto flex justify-between items-center">
@@ -153,28 +168,29 @@
                 </div>
                 <div>
                   <h1 className="text-base font-bold leading-none tracking-tight">E-Gov Siraman</h1>
-                  <p className="text-[10px] text-slate-400 font-medium">Official Platform <span className="text-brand-500">by Jumari</span></p>
+                  <p className="text-[10px] text-slate-400 font-medium">Official Portal <span className="text-brand-400 font-semibold">by Jumari</span></p>
                 </div>
               </div>
 
-              {/* Menu Publik */}
-              <div className="hidden md:flex items-center gap-1 text-xs font-semibold text-slate-300">
-                <button onClick={() => setView('home')} className={`px-3 py-2 rounded-lg transition ${view==='home'?'bg-brand-600/20 text-brand-500': 'hover:text-white'}`}>Beranda</button>
-                <button onClick={() => setView('layanan')} className={`px-3 py-2 rounded-lg transition ${view==='layanan'?'bg-brand-600/20 text-brand-500': 'hover:text-white'}`}>Jemput Berkas</button>
-                <button onClick={() => setView('berita')} className={`px-3 py-2 rounded-lg transition ${view==='berita'?'bg-brand-600/20 text-brand-500': 'hover:text-white'}`}>Berita Desa</button>
-                <button onClick={() => setView('transparansi')} className={`px-3 py-2 rounded-lg transition ${view==='transparansi'?'bg-brand-600/20 text-brand-500': 'hover:text-white'}`}>Keuangan APBD</button>
-                <button onClick={() => setView('kependudukan')} className={`px-3 py-2 rounded-lg transition ${view==='kependudukan'?'bg-brand-600/20 text-brand-500': 'hover:text-white'}`}>Data Penduduk</button>
-                <button onClick={() => setView('saran')} className={`px-3 py-2 rounded-lg transition ${view==='saran'?'bg-brand-600/20 text-brand-500': 'hover:text-white'}`}>Kritik & Saran</button>
+              {/* Navigation Menu */}
+              <div className="hidden lg:flex items-center gap-1 text-xs font-semibold text-slate-300">
+                <button onClick={() => setView('home')} className={`px-3.5 py-2 rounded-xl transition ${view==='home'?'bg-brand-600/20 text-brand-400 border border-brand-500/30': 'hover:text-white hover:bg-slate-800/50'}`}>Beranda</button>
+                <button onClick={() => setView('layanan')} className={`px-3.5 py-2 rounded-xl transition ${view==='layanan'?'bg-brand-600/20 text-brand-400 border border-brand-500/30': 'hover:text-white hover:bg-slate-800/50'}`}>📦 Jemput Berkas</button>
+                <button onClick={() => setView('berita')} className={`px-3.5 py-2 rounded-xl transition ${view==='berita'?'bg-brand-600/20 text-brand-400 border border-brand-500/30': 'hover:text-white hover:bg-slate-800/50'}`}>📰 Berita Desa</button>
+                <button onClick={() => setView('transparansi')} className={`px-3.5 py-2 rounded-xl transition ${view==='transparansi'?'bg-brand-600/20 text-brand-400 border border-brand-500/30': 'hover:text-white hover:bg-slate-800/50'}`}>📊 Keuangan APBD</button>
+                <button onClick={() => setView('kependudukan')} className={`px-3.5 py-2 rounded-xl transition ${view==='kependudukan'?'bg-brand-600/20 text-brand-400 border border-brand-500/30': 'hover:text-white hover:bg-slate-800/50'}`}>👥 Data Penduduk</button>
+                <button onClick={() => setView('peta')} className={`px-3.5 py-2 rounded-xl transition ${view==='peta'?'bg-brand-600/20 text-brand-400 border border-brand-500/30': 'hover:text-white hover:bg-slate-800/50'}`}>🗺️ Peta Padukuhan</button>
+                <button onClick={() => setView('saran')} className={`px-3.5 py-2 rounded-xl transition ${view==='saran'?'bg-brand-600/20 text-brand-400 border border-brand-500/30': 'hover:text-white hover:bg-slate-800/50'}`}>💬 Kritik & Saran</button>
               </div>
 
-              {/* Admin Button Tersembunyi (Ikon Kunci Kecil) */}
+              {/* Admin Button Kecil Tersembunyi */}
               <div className="flex items-center gap-2">
                 {user ? (
                   <div className="flex items-center gap-2">
-                    <button onClick={() => setView('admin')} className="px-3 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold transition">
-                      ⚙️ Panel Admin
+                    <button onClick={() => setView('admin')} className="px-3 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold transition shadow-lg shadow-brand-600/20">
+                      ⚙️ Dashboard Admin
                     </button>
-                    <button onClick={() => signOut(auth)} className="px-2 py-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white text-xs transition">
+                    <button onClick={() => signOut(auth)} className="px-2.5 py-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white text-xs transition">
                       Keluar
                     </button>
                   </div>
@@ -182,7 +198,7 @@
                   <button 
                     onClick={() => setView('login')} 
                     title="Akses Sistem Admin" 
-                    className="p-2 rounded-lg text-slate-600 hover:text-slate-300 transition"
+                    className="p-2 rounded-xl text-slate-600 hover:text-slate-300 hover:bg-slate-800/50 transition"
                   >
                     🔐
                   </button>
@@ -191,13 +207,14 @@
             </div>
           </nav>
 
-          {/* Body Content */}
-          <main className="flex-grow pt-20 pb-12">
-            {view === 'home' && <HomeView setView={setView} berita={berita} />}
+          {/* Body Dynamic Content */}
+          <main className="flex-grow pt-24 pb-12">
+            {view === 'home' && <HomeView setView={setView} berita={berita} loading={loadingData} />}
             {view === 'layanan' && <LayananJemputView fetchData={fetchData} />}
-            {view === 'berita' && <BeritaView berita={berita} />}
+            {view === 'berita' && <BeritaView berita={berita} loading={loadingData} />}
             {view === 'transparansi' && <TransparansiKeuanganView />}
             {view === 'kependudukan' && <DataPendudukView />}
+            {view === 'peta' && <PetaPadukuhanView />}
             {view === 'saran' && <KritikSaranView fetchData={fetchData} />}
             {view === 'login' && <LoginAdminView setView={setView} />}
             {view === 'admin' && user && (
@@ -211,56 +228,98 @@
           </main>
 
           {/* Footer */}
-          <footer className="border-t border-slate-800/80 py-6 text-center text-xs text-slate-500 bg-slate-950/40 backdrop-blur-md">
-            <p>© 2026 E-Gov Siraman by Jumari. Solusi Administrasi & Transparansi Desa.</p>
+          <footer className="border-t border-slate-800/80 py-8 text-center text-xs text-slate-500 bg-slate-950/60 backdrop-blur-md">
+            <div className="max-w-7xl mx-auto px-4 space-y-2">
+              <p className="font-semibold text-slate-400">E-Gov Siraman Digital Services © 2026 by Jumari</p>
+              <p className="text-[11px] text-slate-600">Sistem Informasi Birokrasi, Antar-Jemput Berkas Kependudukan, & Transparansi Anggaran Desa Siraman, Gunungkidul.</p>
+            </div>
           </footer>
         </div>
       );
     }
-
-    // --- VIEW 1: HOME BERANDA ---
-    function HomeView({ setView, berita }) {
+        // --- VIEW 1: HOME / BERANDA ---
+    function HomeView({ setView, berita, loading }) {
       return (
-        <div className="space-y-12 max-w-7xl mx-auto px-4 pt-4">
+        <div className="space-y-12 max-w-7xl mx-auto px-4">
+          {/* Hero Banner */}
           <div className="glass-panel rounded-3xl p-8 md:p-14 border border-slate-800 relative overflow-hidden flex items-center justify-between">
             <div className="max-w-2xl z-10 space-y-6">
-              <span className="px-3.5 py-1.5 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-400 font-semibold text-xs tracking-wide">
-                🚀 Solusi Inovasi Administrasi by Jumari
+              <span className="px-3.5 py-1.5 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-400 font-semibold text-xs tracking-wide inline-flex items-center gap-2">
+                <span>🚀</span> Solusi Inovasi Pelayanan Publik by Jumari
               </span>
               <h1 className="text-3xl md:text-5xl font-extrabold leading-tight tracking-tight">
                 Layanan Birokrasi Cepat, Transparan & Bebas Ribet.
               </h1>
               <p className="text-slate-400 text-sm leading-relaxed">
-                Platform resmi E-Gov Kelurahan Siraman. Ajukan dokumen dari rumah, petugas lapangan kami siap menjemput persyaratan langsung ke rumah Anda!
+                Portal resmi E-Gov Kelurahan Siraman. Tidak perlu bolak-balik ke kantor desa. Ajukan surat dari rumah, petugas lapangan siap datang ke rumah Anda untuk menjemput berkas fisik!
               </p>
               <div className="flex flex-wrap gap-3 pt-2">
-                <button onClick={() => setView('layanan')} className="px-6 py-3 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold shadow-lg shadow-brand-600/30 transition">
-                  📦 Buat Permohonan / Jemput Berkas
+                <button onClick={() => setView('layanan')} className="px-6 py-3.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold shadow-lg shadow-brand-600/30 transition flex items-center gap-2">
+                  <span>📦</span> Buat Permohonan / Jemput Berkas
                 </button>
-                <button onClick={() => setView('transparansi')} className="px-6 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 transition">
-                  📊 Cek Keuangan Desa
+                <button onClick={() => setView('transparansi')} className="px-6 py-3.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 transition flex items-center gap-2">
+                  <span>📊</span> Cek Keuangan APBD Desa
                 </button>
               </div>
             </div>
           </div>
 
-          {/* Ringkasan Fitur Unggulan */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Grid Fitur Unggulan */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="glass-card p-6 rounded-2xl border border-slate-800 space-y-2">
-              <div className="w-10 h-10 rounded-xl bg-brand-500/10 text-brand-400 flex items-center justify-center font-bold">🛵</div>
-              <h3 className="font-bold text-base">Jemput Berkas Layangan</h3>
+              <div className="w-10 h-10 rounded-xl bg-brand-500/10 text-brand-400 flex items-center justify-center font-bold text-lg">🛵</div>
+              <h3 className="font-bold text-sm text-slate-200">Jemput Berkas Layangan</h3>
               <p className="text-xs text-slate-400 leading-relaxed">Persyaratan administrasi dijemput langsung oleh petugas ke rumah warga.</p>
             </div>
             <div className="glass-card p-6 rounded-2xl border border-slate-800 space-y-2">
-              <div className="w-10 h-10 rounded-xl bg-accent-500/10 text-accent-400 flex items-center justify-center font-bold">💰</div>
-              <h3 className="font-bold text-base">Transparansi Keuangan</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">Publikasi riil penggunaan dana desa dan anggaran kelurahan Siraman.</p>
+              <div className="w-10 h-10 rounded-xl bg-accent-500/10 text-accent-400 flex items-center justify-center font-bold text-lg">💰</div>
+              <h3 className="font-bold text-sm text-slate-200">Transparansi Keuangan</h3>
+              <p className="text-xs text-slate-400 leading-relaxed">Publikasi riil penggunaan dana desa dan anggaran kelurahan secara terbuka.</p>
             </div>
             <div className="glass-card p-6 rounded-2xl border border-slate-800 space-y-2">
-              <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center font-bold">📈</div>
-              <h3 className="font-bold text-base">Data Penduduk Akurat</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">Statistik lengkap demografi warga dari tingkatan usia hingga gender.</p>
+              <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center font-bold text-lg">📈</div>
+              <h3 className="font-bold text-sm text-slate-200">Data Penduduk Akurat</h3>
+              <p className="text-xs text-slate-400 leading-relaxed">Statistik lengkap demografi warga dari tingkatan usia hingga kelompok gender.</p>
             </div>
+            <div className="glass-card p-6 rounded-2xl border border-slate-800 space-y-2">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center font-bold text-lg">🗺️</div>
+              <h3 className="font-bold text-sm text-slate-200">Peta Wilayah Desa</h3>
+              <p className="text-xs text-slate-400 leading-relaxed">Informasi geografis padukuhan dan pemetaan zonasi di Kelurahan Siraman.</p>
+            </div>
+          </div>
+
+          {/* Preview Berita Terbaru */}
+          <div className="space-y-4">
+            <div className="flex justify-between items-end">
+              <div>
+                <h2 className="text-xl font-bold">Kabar Siraman Terbaru</h2>
+                <p className="text-xs text-slate-400">Informasi dan pengumuman resmi dari kelurahan</p>
+              </div>
+              <button onClick={() => setView('berita')} className="text-xs text-brand-400 hover:underline font-semibold">
+                Lihat Semua Berita →
+              </button>
+            </div>
+
+            {loading ? (
+              <div className="text-center py-8 text-xs text-slate-500">Memuat berita terbaru...</div>
+            ) : berita.length === 0 ? (
+              <div className="p-8 rounded-2xl glass-card text-center text-xs text-slate-500 border border-slate-800">
+                Belum ada berita terpublikasi.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {berita.slice(0, 3).map(b => (
+                  <div key={b.id} className="glass-card rounded-2xl overflow-hidden border border-slate-800 flex flex-col">
+                    <img src={b.imageUrl || 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=600&q=80'} className="h-40 w-full object-cover" />
+                    <div className="p-5 space-y-2 flex-grow">
+                      <span className="text-[10px] font-bold text-brand-400 uppercase tracking-wider">{b.kategori || 'Pengumuman'}</span>
+                      <h3 className="font-bold text-sm line-clamp-2 text-slate-100">{b.judul}</h3>
+                      <p className="text-xs text-slate-400 line-clamp-3 leading-relaxed">{b.isi}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       );
@@ -293,26 +352,28 @@
 
           setSuccess(true);
           setFormData({ nama: '', nik: '', padukuhan: '', whatsapp: '', jenisSurat: 'Surat Keterangan Usaha (SKU)', catatan: '', opsiJemput: true });
+          setFilePersyaratan(null);
           fetchData();
         } catch (err) {
-          alert("Gagal mengirim permohonan berkas.");
+          alert("Gagal mengirim permohonan berkas. Periksa koneksi internet Anda.");
         } finally {
           setLoading(false);
         }
       };
 
       return (
-        <div className="max-w-3xl mx-auto px-4 pt-4">
+        <div className="max-w-3xl mx-auto px-4">
           <div className="glass-panel p-8 md:p-10 rounded-3xl border border-slate-800 space-y-6">
             <div>
-              <span className="text-xs font-bold text-brand-500 uppercase tracking-widest">Inovasi Layanan by Jumari</span>
-              <h2 className="text-2xl font-bold mt-1">Permohonan & Antar-Jemput Berkas</h2>
-              <p className="text-xs text-slate-400 mt-1">Isi formulir di bawah ini. Petugas kelurahan akan memverifikasi dan datang ke rumah kamu untuk menjemput dokumen fisik!</p>
+              <span className="text-xs font-bold text-brand-400 uppercase tracking-widest">Solusi Inovatif Administrasi by Jumari</span>
+              <h2 className="text-2xl font-bold mt-1">Layanan Antar-Jemput Berkas Surat</h2>
+              <p className="text-xs text-slate-400 mt-1">Masyarakat cukup mengisi formulir & unggah persyaratan. Petugas lapangan akan datang menjemput berkas asli ke rumah Anda!</p>
             </div>
 
             {success && (
-              <div className="p-4 rounded-xl bg-accent-500/10 border border-accent-500/20 text-accent-400 text-xs font-medium">
-                ✅ Permohonan berhasil diajukan! Tim petugas lapangan akan menghubungi nomor WhatsApp Anda untuk konfirmasi jadwal penjemputan berkas.
+              <div className="p-4 rounded-2xl bg-accent-500/10 border border-accent-500/30 text-accent-400 text-xs font-medium space-y-1">
+                <p className="font-bold">✅ Permohonan Berhasil Dikirim!</p>
+                <p className="text-slate-300">Data Anda telah dicatat di sistem. Petugas lapangan kelurahan akan menghubungi nomor WhatsApp Anda untuk mengonfirmasi jadwal penjemputan berkas ke rumah.</p>
               </div>
             )}
 
@@ -340,33 +401,34 @@
               </div>
 
               <div>
-                <label className="block mb-1 font-medium text-slate-300">Jenis Dokumen / Surat Yang Dibutuhkan</label>
-                <select value={formData.jenisSurat} onChange={e=>setFormData({...formData, jenisSurat:e.target.value})} className="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-800 outline-none focus:border-brand-500">
+                <label className="block mb-1 font-medium text-slate-300">Jenis Dokumen / Surat Yang Diajukan *</label>
+                <select value={formData.jenisSurat} onChange={e=>setFormData({...formData, jenisSurat:e.target.value})} className="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-800 outline-none focus:border-brand-500 text-slate-200">
                   <option value="Surat Keterangan Usaha (SKU)">Surat Keterangan Usaha (SKU)</option>
                   <option value="Surat Keterangan Tidak Mampu (SKTM)">Surat Keterangan Tidak Mampu (SKTM)</option>
-                  <option value="Pengantar Kartu Keluarga / KTP">Pengantar Kartu Keluarga / KTP</option>
+                  <option value="Pengantar Kartu Keluarga / KTP Baru">Pengantar Kartu Keluarga / KTP Baru</option>
                   <option value="Surat Keterangan Domisili">Surat Keterangan Domisili</option>
                   <option value="Surat Keterangan Kelahiran / Kematian">Surat Keterangan Kelahiran / Kematian</option>
+                  <option value="Surat Keterangan Pindah Penduduk">Surat Keterangan Pindah Penduduk</option>
                 </select>
               </div>
 
               <div>
-                <label className="block mb-1 font-medium text-slate-300">Foto Persyaratan (KTP / KK / Bukti Pendukung)</label>
+                <label className="block mb-1 font-medium text-slate-300">Unggah Foto Dokumen Persyaratan (KTP / KK / Surat Pengantar RT)</label>
                 <input type="file" accept="image/*" onChange={e=>setFilePersyaratan(e.target.files[0])} className="w-full text-slate-400 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:bg-brand-600/20 file:text-brand-400 font-semibold cursor-pointer" />
               </div>
 
               <div>
-                <label className="block mb-1 font-medium text-slate-300">Catatan Lokasi / Pesan Tambahan</label>
-                <textarea rows="3" value={formData.catatan} onChange={e=>setFormData({...formData, catatan:e.target.value})} className="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-800 outline-none focus:border-brand-500" placeholder="Patokan rumah atau informasi penting lainnya..."></textarea>
+                <label className="block mb-1 font-medium text-slate-300">Catatan / Patokan Lokasi Rumah</label>
+                <textarea rows="3" value={formData.catatan} onChange={e=>setFormData({...formData, catatan:e.target.value})} className="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-800 outline-none focus:border-brand-500" placeholder="Tuliskan patokan lokasi rumah atau instruksi penjemputan..."></textarea>
               </div>
 
-              <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 flex items-center gap-3">
+              <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center gap-3">
                 <input type="checkbox" checked={formData.opsiJemput} onChange={e=>setFormData({...formData, opsiJemput:e.target.checked})} id="jemput" className="w-4 h-4 text-brand-600 rounded" />
-                <label htmlFor="jemput" className="text-slate-300 font-medium">Saya meminta petugas lapangan menjemput berkas fisik ke rumah saya.</label>
+                <label htmlFor="jemput" className="text-slate-300 font-medium">Aktifkan Layanan Antar-Jemput Berkas oleh Petugas Lapangan.</label>
               </div>
 
               <button type="submit" disabled={loading} className="w-full py-3.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold transition shadow-lg shadow-brand-600/20 disabled:opacity-50">
-                {loading ? 'Memproses Permohonan...' : '🚀 Kirim Permohonan & Jadwalkan Jemput'}
+                {loading ? 'Mengompres File & Mengirim...' : '🚀 Kirim Permohonan & Jadwalkan Penjemputan'}
               </button>
             </form>
           </div>
@@ -374,18 +436,22 @@
       );
     }
 
-    // --- VIEW 3: BERITA KELURAHAN ---
-    function BeritaView({ berita }) {
+    // --- VIEW 3: BERITA KELURAHAN (FULL LIST) ---
+    function BeritaView({ berita, loading }) {
       return (
-        <div className="max-w-7xl mx-auto px-4 pt-4 space-y-6">
+        <div className="max-w-7xl mx-auto px-4 space-y-6">
           <div>
-            <h2 className="text-2xl font-bold">Berita & Kabar Kelurahan Siraman</h2>
-            <p className="text-xs text-slate-400">Pusat publikasi informasi dan kegiatan masyarakat terupdate.</p>
+            <h2 className="text-2xl font-bold">Warta & Berita Desa Siraman</h2>
+            <p className="text-xs text-slate-400">Pusat publikasi resmi seluruh kegiatan dan pengumuman masyarakat.</p>
           </div>
 
-          {berita.length === 0 ? (
+          {loading ? (
             <div className="text-center py-12 glass-panel rounded-2xl border border-slate-800 text-xs text-slate-500">
-              Belum ada berita yang diterbitkan.
+              Menghubungkan ke database berita...
+            </div>
+          ) : berita.length === 0 ? (
+            <div className="text-center py-12 glass-panel rounded-2xl border border-slate-800 text-xs text-slate-500">
+              Belum ada berita yang diunggah oleh admin.
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -393,9 +459,12 @@
                 <div key={b.id} className="glass-card rounded-2xl overflow-hidden border border-slate-800 flex flex-col">
                   <img src={b.imageUrl || 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=600&q=80'} className="h-48 w-full object-cover" />
                   <div className="p-5 space-y-2 flex-grow">
-                    <span className="text-[10px] font-bold text-brand-400 uppercase tracking-wider">{b.kategori || 'Pengumuman'}</span>
-                    <h3 className="font-bold text-base line-clamp-2">{b.judul}</h3>
-                    <p className="text-xs text-slate-400 line-clamp-3 leading-relaxed">{b.isi}</p>
+                    <div className="flex justify-between items-center text-[10px]">
+                      <span className="font-bold text-brand-400 uppercase tracking-wider">{b.kategori || 'Pengumuman'}</span>
+                      <span className="text-slate-500">{new Date(b.timestamp || Date.now()).toLocaleDateString('id-ID')}</span>
+                    </div>
+                    <h3 className="font-bold text-base line-clamp-2 text-slate-100">{b.judul}</h3>
+                    <p className="text-xs text-slate-400 leading-relaxed whitespace-pre-line">{b.isi}</p>
                   </div>
                 </div>
               ))}
@@ -405,61 +474,74 @@
       );
     }
 
-    // --- VIEW 4: TRANSPARANSI KEUANGAN DESA ---
+    // --- VIEW 4: TRANSPARANSI KEUANGAN ---
     function TransparansiKeuanganView() {
       return (
-        <div className="max-w-7xl mx-auto px-4 pt-4 space-y-6">
+        <div className="max-w-7xl mx-auto px-4 space-y-6">
           <div>
-            <h2 className="text-2xl font-bold">Transparansi Keuangan APBD Kelurahan</h2>
-            <p className="text-xs text-slate-400">Laporan realisasi anggaran pendapatan dan belanja desa secara transparan.</p>
+            <h2 className="text-2xl font-bold">Transparansi Anggaran & Keuangan APBD Desa</h2>
+            <p className="text-xs text-slate-400">Laporan realisasi penggunaan dana desa secara transparan untuk seluruh masyarakat.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="glass-card p-6 rounded-2xl border border-slate-800 space-y-2">
-              <span className="text-xs text-slate-400">Total Pendapatan Desa (2026)</span>
+              <span className="text-xs text-slate-400 font-medium">Total Pendapatan Desa (2026)</span>
               <p className="text-2xl font-extrabold text-accent-400">Rp 1.850.000.000</p>
-              <span className="text-[10px] text-slate-500">Dana Desa & Bagi Hasil Pajak</span>
+              <span className="text-[10px] text-slate-500">Sumber: Dana Desa & Alokasi BKK</span>
             </div>
             <div className="glass-card p-6 rounded-2xl border border-slate-800 space-y-2">
-              <span className="text-xs text-slate-400">Realisasi Pembangunan</span>
+              <span className="text-xs text-slate-400 font-medium">Realisasi Pembangunan</span>
               <p className="text-2xl font-extrabold text-brand-400">Rp 1.240.000.000</p>
-              <span className="text-[10px] text-slate-500">67% Terpakai</span>
+              <span className="text-[10px] text-slate-500">Terserap 67% dari Total Pagu</span>
             </div>
             <div className="glass-card p-6 rounded-2xl border border-slate-800 space-y-2">
-              <span className="text-xs text-slate-400">Sisa Anggaran Kas</span>
+              <span className="text-xs text-slate-400 font-medium">Sisa Anggaran Kas Desa</span>
               <p className="text-2xl font-extrabold text-purple-400">Rp 610.000.000</p>
-              <span className="text-[10px] text-slate-500">Alokasi Semester II</span>
+              <span className="text-[10px] text-slate-500">Alokasi Operasional Semester II</span>
             </div>
           </div>
 
-          <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
-            <h3 className="font-bold text-base">Rincian Penggunaan Dana Usulan 2026</h3>
-            <div className="space-y-3 text-xs">
+          <div className="glass-panel p-6 md:p-8 rounded-2xl border border-slate-800 space-y-5">
+            <h3 className="font-bold text-base">Detail Alokasi Anggaran Utama Tahun 2026</h3>
+            
+            <div className="space-y-4 text-xs">
               <div>
-                <div className="flex justify-between mb-1">
-                  <span>Pembangunan Infrastruktur Jalan & Drainase Padukuhan</span>
-                  <span className="font-bold text-slate-300">Rp 750.000.000 (40%)</span>
+                <div className="flex justify-between mb-1.5 font-medium">
+                  <span>Pembangunan Fisik & Drainase Padukuhan</span>
+                  <span className="font-bold text-slate-200">Rp 750.000.000 (40%)</span>
                 </div>
-                <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
-                  <div className="h-full bg-brand-500 w-[40%]"></div>
+                <div className="w-full h-2.5 rounded-full bg-slate-900 border border-slate-800 overflow-hidden">
+                  <div className="h-full bg-brand-500 w-[40%] rounded-full"></div>
                 </div>
               </div>
+
               <div>
-                <div className="flex justify-between mb-1">
+                <div className="flex justify-between mb-1.5 font-medium">
                   <span>Pemberdayaan UMKM & Ketahanan Pangan</span>
-                  <span className="font-bold text-slate-300">Rp 450.000.000 (24%)</span>
+                  <span className="font-bold text-slate-200">Rp 450.000.000 (24%)</span>
                 </div>
-                <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
-                  <div className="h-full bg-accent-500 w-[24%]"></div>
+                <div className="w-full h-2.5 rounded-full bg-slate-900 border border-slate-800 overflow-hidden">
+                  <div className="h-full bg-accent-500 w-[24%] rounded-full"></div>
                 </div>
               </div>
+
               <div>
-                <div className="flex justify-between mb-1">
+                <div className="flex justify-between mb-1.5 font-medium">
                   <span>Digitalisasi Pelayanan & Sistem E-Gov by Jumari</span>
-                  <span className="font-bold text-slate-300">Rp 180.000.000 (10%)</span>
+                  <span className="font-bold text-slate-200">Rp 180.000.000 (10%)</span>
                 </div>
-                <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
-                  <div className="h-full bg-purple-500 w-[10%]"></div>
+                <div className="w-full h-2.5 rounded-full bg-slate-900 border border-slate-800 overflow-hidden">
+                  <div className="h-full bg-purple-500 w-[10%] rounded-full"></div>
+                </div>
+              </div>
+
+              <div>
+                <div className="flex justify-between mb-1.5 font-medium">
+                  <span>Pembinaan Karang Taruna & Olahraga</span>
+                  <span className="font-bold text-slate-200">Rp 120.000.000 (6%)</span>
+                </div>
+                <div className="w-full h-2.5 rounded-full bg-slate-900 border border-slate-800 overflow-hidden">
+                  <div className="h-full bg-amber-500 w-[6%] rounded-full"></div>
                 </div>
               </div>
             </div>
@@ -471,45 +553,52 @@
     // --- VIEW 5: DATA DEMOGRAFI & PENDUDUK ---
     function DataPendudukView() {
       return (
-        <div className="max-w-7xl mx-auto px-4 pt-4 space-y-6">
+        <div className="max-w-7xl mx-auto px-4 space-y-6">
           <div>
-            <h2 className="text-2xl font-bold">Statistik Kependudukan Siraman</h2>
-            <p className="text-xs text-slate-400">Data rinci demografi warga Kelurahan Siraman terkini.</p>
+            <h2 className="text-2xl font-bold">Data Kependudukan Kelurahan Siraman</h2>
+            <p className="text-xs text-slate-400">Statistik demografi warga berdasarkan klasifikasi gender, tingkatan usia, dan kartu keluarga.</p>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="glass-card p-5 rounded-2xl border border-slate-800 text-center">
-              <span className="text-xs text-slate-400">Total Warga</span>
-              <p className="text-3xl font-black text-brand-400 mt-1">4,820</p>
+            <div className="glass-card p-5 rounded-2xl border border-slate-800 text-center space-y-1">
+              <span className="text-xs text-slate-400">Total Warga Siraman</span>
+              <p className="text-3xl font-black text-brand-400">4,820</p>
+              <span className="text-[10px] text-slate-500">Jiwa Terdata</span>
             </div>
-            <div className="glass-card p-5 rounded-2xl border border-slate-800 text-center">
-              <span className="text-xs text-slate-400">Laki-Laki</span>
-              <p className="text-3xl font-black text-slate-200 mt-1">2,380</p>
+            <div className="glass-card p-5 rounded-2xl border border-slate-800 text-center space-y-1">
+              <span className="text-xs text-slate-400">Pria</span>
+              <p className="text-3xl font-black text-slate-200">2,380</p>
+              <span className="text-[10px] text-slate-500">49.3% Total</span>
             </div>
-            <div className="glass-card p-5 rounded-2xl border border-slate-800 text-center">
-              <span className="text-xs text-slate-400">Perempuan</span>
-              <p className="text-3xl font-black text-slate-200 mt-1">2,440</p>
+            <div className="glass-card p-5 rounded-2xl border border-slate-800 text-center space-y-1">
+              <span className="text-xs text-slate-400">Wanita</span>
+              <p className="text-3xl font-black text-slate-200">2,440</p>
+              <span className="text-[10px] text-slate-500">50.7% Total</span>
             </div>
-            <div className="glass-card p-5 rounded-2xl border border-slate-800 text-center">
+            <div className="glass-card p-5 rounded-2xl border border-slate-800 text-center space-y-1">
               <span className="text-xs text-slate-400">Kepala Keluarga (KK)</span>
-              <p className="text-3xl font-black text-accent-400 mt-1">1,410</p>
+              <p className="text-3xl font-black text-accent-400">1,410</p>
+              <span className="text-[10px] text-slate-500">Rumah Tangga</span>
             </div>
           </div>
 
-          <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
-            <h3 className="font-bold text-base">Demografi Berdasarkan Kelompok Usia</h3>
+          <div className="glass-panel p-6 md:p-8 rounded-2xl border border-slate-800 space-y-4">
+            <h3 className="font-bold text-base">Demografi Rentang Usia Penduduk</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-              <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
-                <span className="text-slate-400">Anak-anak (0 - 14 Tahun)</span>
-                <p className="text-xl font-extrabold text-brand-400">950 Jiwa (20%)</p>
+              <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
+                <span className="text-slate-400 font-medium">Anak-anak & Balita (0 - 14 Thn)</span>
+                <p className="text-2xl font-black text-brand-400">950 Jiwa</p>
+                <p className="text-[11px] text-slate-500">20% dari total populasi</p>
               </div>
-              <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
-                <span className="text-slate-400">Usia Produktif / Dewasa (15 - 59 Tahun)</span>
-                <p className="text-xl font-extrabold text-accent-400">3,120 Jiwa (64%)</p>
+              <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
+                <span className="text-slate-400 font-medium">Usia Produktif (15 - 59 Thn)</span>
+                <p className="text-2xl font-black text-accent-400">3,120 Jiwa</p>
+                <p className="text-[11px] text-slate-500">64% dari total populasi</p>
               </div>
-              <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
-                <span className="text-slate-400">Lansia (60+ Tahun)</span>
-                <p className="text-xl font-extrabold text-purple-400">750 Jiwa (16%)</p>
+              <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
+                <span className="text-slate-400 font-medium">Lansia (60+ Thn)</span>
+                <p className="text-2xl font-black text-purple-400">750 Jiwa</p>
+                <p className="text-[11px] text-slate-500">16% dari total populasi</p>
               </div>
             </div>
           </div>
@@ -517,7 +606,29 @@
       );
     }
 
-    // --- VIEW 6: KRITIK & SARAN ---
+    // --- VIEW 6: PETA PADUKUHAN ---
+    function PetaPadukuhanView() {
+      return (
+        <div className="max-w-7xl mx-auto px-4 space-y-6">
+          <div>
+            <h2 className="text-2xl font-bold">Peta Wilayah Padukuhan Siraman</h2>
+            <p className="text-xs text-slate-400">Pemetaan zonasi wilayah, batas RT/RW, dan cakupan penjemputan berkas.</p>
+          </div>
+
+          <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
+            <div className="h-80 w-full rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-center p-6 text-xs text-slate-500">
+              <div>
+                <p className="text-slate-300 font-bold text-sm mb-1">🗺️ Peta Digital Kelurahan Siraman</p>
+                <p>Padukuhan Seneng, Siraman, Gunungkidul & Wilayah Sekitarnya</p>
+                <p className="text-[10px] text-brand-400 mt-2">Area Layanan Penjemputan Berkas Aktif 100%</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // --- VIEW 7: KRITIK & SARAN ---
     function KritikSaranView({ fetchData }) {
       const [nama, setNama] = useState('');
       const [pesan, setPesan] = useState('');
@@ -527,11 +638,11 @@
         e.preventDefault();
         try {
           await addDoc(collection(db, "saran"), {
-            nama: nama || 'Anonim',
+            nama: nama || 'Warga Anonim',
             pesan,
             timestamp: Date.now()
           });
-          setMsg("✅ Terima kasih! Kritik dan saran Anda telah tersampaikan.");
+          setMsg("✅ Terima kasih! Masukan Anda telah terkirim langsung ke dashboard admin.");
           setNama(''); setPesan('');
           fetchData();
         } catch (e) {
@@ -540,249 +651,349 @@
       };
 
       return (
-        <div className="max-w-2xl mx-auto px-4 pt-4">
+        <div className="max-w-2xl mx-auto px-4">
           <div className="glass-panel p-8 rounded-3xl border border-slate-800 space-y-6">
             <div>
-              <h2 className="text-2xl font-bold">Kritik & Saran Warga</h2>
-              <p className="text-xs text-slate-400 mt-1">Sampaikan masukan demi kemajuan birokrasi Kelurahan Siraman.</p>
+              <h2 className="text-2xl font-bold">Kritik, Saran & Masukan Warga</h2>
+              <p className="text-xs text-slate-400 mt-1">Sampaikan aspirasi Anda demi perbaikan kualitas birokrasi dan pelayanan di Kelurahan Siraman.</p>
             </div>
 
-            {msg && <div className="p-3 rounded-xl bg-brand-500/10 border border-brand-500/20 text-brand-400 text-xs text-center">{msg}</div>}
+            {msg && <div className="p-3.5 rounded-xl bg-brand-500/10 border border-brand-500/20 text-brand-400 text-xs text-center font-medium">{msg}</div>}
 
             <form onSubmit={handleSubmit} className="space-y-4 text-xs">
               <div>
-                <label className="block mb-1 font-medium">Nama Anda (Opsional / Boleh Anonim)</label>
-                <input type="text" value={nama} onChange={e=>setNama(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-800 outline-none focus:border-brand-500" placeholder="Masukkan nama..." />
+                <label className="block mb-1 font-medium">Nama Anda (Kosongkan jika ingin Anonim)</label>
+                <input type="text" value={nama} onChange={e=>setNama(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-800 outline-none focus:border-brand-500" placeholder="Nama Warga / Padukuhan..." />
               </div>
               <div>
-                <label className="block mb-1 font-medium">Kritik / Saran / Masukan *</label>
-                <textarea required rows="4" value={pesan} onChange={e=>setPesan(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-800 outline-none focus:border-brand-500" placeholder="Tuliskan saran Anda..."></textarea>
+                <label className="block mb-1 font-medium">Pesan Masukan / Critique *</label>
+                <textarea required rows="4" value={pesan} onChange={e=>setPesan(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-800 outline-none focus:border-brand-500" placeholder="Tulis masukan, kritik, atau keluhan fasilitas umum desa..."></textarea>
               </div>
               <button type="submit" className="w-full py-3.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold transition shadow-lg shadow-brand-600/20">
-                Kirim Saran
+                Kirim Masukan
               </button>
             </form>
           </div>
         </div>
       );
     }
-
-    // --- VIEW 7: LOGIN ADMIN ---
+        // --- VIEW 8: LOGIN ADMIN ---
     function LoginAdminView({ setView }) {
       const [email, setEmail] = useState('');
       const [password, setPassword] = useState('');
-      const [err, setErr] = useState('');
+      const [errorMsg, setErrorMsg] = useState('');
+      const [loading, setLoading] = useState(false);
 
       const handleLogin = async (e) => {
         e.preventDefault();
+        setLoading(true);
+        setErrorMsg('');
         try {
           await signInWithEmailAndPassword(auth, email, password);
           setView('admin');
-        } catch (error) {
-          setErr("Login gagal. Periksa Email & Password Admin!");
-        }
-      };
-
-      return (
-        <div className="max-w-md mx-auto px-4 pt-12">
-          <div className="glass-panel p-8 rounded-3xl border border-slate-800 space-y-6">
-            <div className="text-center">
-              <h2 className="text-xl font-bold">Akses Admin E-Gov</h2>
-              <p className="text-xs text-slate-400">Masuk untuk mengelola postingan & permohonan</p>
-            </div>
-
-            {err && <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs text-center">{err}</div>}
-
-            <form onSubmit={handleLogin} className="space-y-4 text-xs">
-              <div>
-                <label className="block mb-1 font-medium">Email Admin</label>
-                <input required type="email" value={email} onChange={e=>setEmail(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-800 outline-none focus:border-brand-500" placeholder="admin@siraman.id" />
-              </div>
-              <div>
-                <label className="block mb-1 font-medium">Password</label>
-                <input required type="password" value={password} onChange={e=>setPassword(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-800 outline-none focus:border-brand-500" placeholder="••••••••" />
-              </div>
-              <button type="submit" className="w-full py-3.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold transition">
-                Masuk Dashboard Admin
-              </button>
-            </form>
-          </div>
-        </div>
-      );
-    }
-
-    // --- VIEW 8: FULL DASHBOARD ADMIN ---
-    function AdminPanel({ berita, layanan, saran, fetchData }) {
-      const [tab, setTab] = useState('layanan');
-
-      // State Form Berita
-      const [judul, setJudul] = useState('');
-      const [isi, setIsi] = useState('');
-      const [kategori, setKategori] = useState('Pengumuman');
-      const [foto, setFoto] = useState(null);
-      const [loading, setLoading] = useState(false);
-
-      const handleAddBerita = async (e) => {
-        e.preventDefault();
-        setLoading(true);
-        try {
-          let base64Text = '';
-          if (foto) base64Text = await convertFileToBase64(foto);
-
-          await addDoc(collection(db, "berita"), {
-            judul, isi, kategori, imageUrl: base64Text, timestamp: Date.now()
-          });
-
-          setJudul(''); setIsi(''); setFoto(null);
-          await fetchData();
-          alert("Berita berhasil dipublikasikan!");
-        } catch (e) {
-          alert("Gagal posting berita.");
+        } catch (err) {
+          setErrorMsg("Login gagal. Periksa kembali Email dan Password Anda.");
         } finally {
           setLoading(false);
         }
       };
 
-      const handleDeleteBerita = async (id) => {
-        if (confirm("Hapus berita ini dari portal?")) {
-          await deleteDoc(doc(db, "berita", id));
+      return (
+        <div className="max-w-md mx-auto px-4 pt-10">
+          <div className="glass-panel p-8 rounded-3xl border border-slate-800 space-y-6">
+            <div className="text-center space-y-1">
+              <div className="w-12 h-12 mx-auto rounded-2xl bg-brand-600/20 text-brand-400 flex items-center justify-center text-xl font-black border border-brand-500/30">
+                🔐
+              </div>
+              <h2 className="text-xl font-bold pt-2">Akses Admin Kelurahan</h2>
+              <p className="text-xs text-slate-400">Masuk untuk mengelola berita, berkas, dan masukan warga.</p>
+            </div>
+
+            {errorMsg && (
+              <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs text-center">
+                {errorMsg}
+              </div>
+            )}
+
+            <form onSubmit={handleLogin} className="space-y-4 text-xs">
+              <div>
+                <label className="block mb-1 font-medium">Email Pengelola</label>
+                <input required type="email" value={email} onChange={e=>setEmail(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-800 outline-none focus:border-brand-500 text-slate-100" placeholder="admin@siraman.go.id" />
+              </div>
+              <div>
+                <label className="block mb-1 font-medium">Password</label>
+                <input required type="password" value={password} onChange={e=>setPassword(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-800 outline-none focus:border-brand-500 text-slate-100" placeholder="••••••••" />
+              </div>
+              <button type="submit" disabled={loading} className="w-full py-3.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold transition shadow-lg shadow-brand-600/20 disabled:opacity-50">
+                {loading ? 'Verifikasi...' : 'Masuk Ke Dashboard'}
+              </button>
+            </form>
+          </div>
+        </div>
+      );
+    }
+
+    // --- VIEW 9: DASHBOARD CONTROL PANEL ADMIN ---
+    function AdminPanel({ berita, layanan, saran, fetchData }) {
+      const [activeTab, setActiveTab] = useState('berita');
+
+      // Form State Berita Baru
+      const [judul, setJudul] = useState('');
+      const [kategori, setKategori] = useState('Pengumuman');
+      const [isi, setIsi] = useState('');
+      const [gambarFile, setGambarFile] = useState(null);
+      const [posting, setPosting] = useState(false);
+
+      // Handle Buat Berita Baru
+      const handleCreateBerita = async (e) => {
+        e.preventDefault();
+        setPosting(true);
+        try {
+          let base64Image = '';
+          if (gambarFile) {
+            base64Image = await convertFileToBase64(gambarFile);
+          }
+
+          await addDoc(collection(db, "berita"), {
+            judul,
+            kategori,
+            isi,
+            imageUrl: base64Image,
+            timestamp: Date.now()
+          });
+
+          setJudul(''); setIsi(''); setGambarFile(null);
+          alert("✅ Berita berhasil terpublikasi ke dashboard warga!");
           fetchData();
+        } catch (err) {
+          alert("❌ Gagal memublikasikan berita: " + err.message);
+        } finally {
+          setPosting(false);
         }
       };
 
-      const handleUpdateStatusLayanan = async (id, statusBaru) => {
-        await updateDoc(doc(db, "layanan", id), { status: statusBaru });
-        fetchData();
+      // Handle Hapus Berita
+      const handleDeleteBerita = async (id) => {
+        if (confirm("Apakah Anda yakin ingin menghapus berita ini?")) {
+          try {
+            await deleteDoc(doc(db, "berita", id));
+            fetchData();
+          } catch (e) {
+            alert("Gagal menghapus berita.");
+          }
+        }
+      };
+
+      // Handle Update Status Jemput Berkas
+      const handleUpdateStatusLayanan = async (id, newStatus) => {
+        try {
+          await updateDoc(doc(db, "layanan", id), { status: newStatus });
+          fetchData();
+        } catch (e) {
+          alert("Gagal memperbarui status.");
+        }
+      };
+
+      // Handle Hapus Layanan
+      const handleDeleteLayanan = async (id) => {
+        if (confirm("Hapus data permohonan ini dari riwayat?")) {
+          try {
+            await deleteDoc(doc(db, "layanan", id));
+            fetchData();
+          } catch (e) {
+            alert("Gagal menghapus data permohonan.");
+          }
+        }
+      };
+
+      // Handle Hapus Saran
+      const handleDeleteSaran = async (id) => {
+        if (confirm("Hapus saran ini dari list?")) {
+          try {
+            await deleteDoc(doc(db, "saran", id));
+            fetchData();
+          } catch (e) {
+            alert("Gagal menghapus masukan.");
+          }
+        }
       };
 
       return (
-        <div className="max-w-7xl mx-auto px-4 pt-4 space-y-6">
-          <div className="flex flex-wrap gap-2 border-b border-slate-800 pb-4">
-            <button onClick={()=>setTab('layanan')} className={`px-4 py-2 rounded-xl text-xs font-bold transition ${tab==='layanan'?'bg-brand-600 text-white':'glass-card text-slate-400'}`}>
-              🛵 Antar-Jemput Berkas ({layanan.length})
-            </button>
-            <button onClick={()=>setTab('berita')} className={`px-4 py-2 rounded-xl text-xs font-bold transition ${tab==='berita'?'bg-brand-600 text-white':'glass-card text-slate-400'}`}>
-              📝 Posting Berita ({berita.length})
-            </button>
-            <button onClick={()=>setTab('saran')} className={`px-4 py-2 rounded-xl text-xs font-bold transition ${tab==='saran'?'bg-brand-600 text-white':'glass-card text-slate-400'}`}>
-              📥 Kritik & Saran ({saran.length})
-            </button>
+        <div className="max-w-7xl mx-auto px-4 space-y-6">
+          <div className="flex flex-wrap justify-between items-center gap-4 bg-slate-900/60 p-6 rounded-2xl border border-slate-800">
+            <div>
+              <h2 className="text-xl font-bold">⚙️ Dashboard Pengelola E-Gov Siraman</h2>
+              <p className="text-xs text-slate-400">Pusat Operasional Pelayanan Publik, Penjemputan Berkas, & Informasi Kelurahan</p>
+            </div>
+            
+            <div className="flex gap-2">
+              <button onClick={() => setActiveTab('berita')} className={`px-4 py-2 rounded-xl text-xs font-bold transition ${activeTab==='berita'?'bg-brand-600 text-white':'bg-slate-800 text-slate-400 hover:text-slate-200'}`}>
+                📰 Kelola Berita ({berita.length})
+              </button>
+              <button onClick={() => setActiveTab('layanan')} className={`px-4 py-2 rounded-xl text-xs font-bold transition ${activeTab==='layanan'?'bg-brand-600 text-white':'bg-slate-800 text-slate-400 hover:text-slate-200'}`}>
+                📦 Jemput Berkas ({layanan.length})
+              </button>
+              <button onClick={() => setActiveTab('saran')} className={`px-4 py-2 rounded-xl text-xs font-bold transition ${activeTab==='saran'?'bg-brand-600 text-white':'bg-slate-800 text-slate-400 hover:text-slate-200'}`}>
+                💬 Masukan Warga ({saran.length})
+              </button>
+            </div>
           </div>
 
-          {/* TAB 1: ADMIN JEMPUT BERKAS */}
-          {tab === 'layanan' && (
-            <div className="space-y-4">
-              <h3 className="font-bold text-lg">Daftar Permohonan & Penjemputan Berkas Warga</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {layanan.map(l => (
-                  <div key={l.id} className="glass-card p-5 rounded-2xl border border-slate-800 space-y-3 text-xs">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h4 className="font-bold text-sm text-brand-400">{l.jenisSurat}</h4>
-                        <p className="text-slate-300 font-semibold">{l.nama} (NIK: {l.nik})</p>
-                        <p className="text-slate-400">Padukuhan: {l.padukuhan} | WA: <a href={`https://wa.me/${l.whatsapp}`} target="_blank" className="text-accent-400 underline">{l.whatsapp}</a></p>
-                      </div>
-                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${l.status==='Menunggu Penjemputan'?'bg-yellow-500/20 text-yellow-400':'bg-accent-500/20 text-accent-400'}`}>
-                        {l.status}
-                      </span>
-                    </div>
-
-                    {l.catatan && <p className="p-3 bg-slate-900 rounded-xl text-slate-300">Patokan: {l.catatan}</p>}
-                    
-                    {l.lampiran && (
-                      <div className="space-y-1">
-                        <span className="text-[10px] text-slate-500">Lampiran Persyaratan:</span>
-                        <img src={l.lampiran} className="h-28 rounded-lg object-cover border border-slate-800" />
-                      </div>
-                    )}
-
-                    <div className="flex gap-2 pt-2 border-t border-slate-800">
-                      <button onClick={()=>handleUpdateStatusLayanan(l.id, 'Sedang Dijemput Petugas')} className="px-3 py-1.5 rounded-lg bg-brand-600 text-white text-[11px] font-bold">
-                        🛵 Jemput Berkas
-                      </button>
-                      <button onClick={()=>handleUpdateStatusLayanan(l.id, 'Selesai Diproses')} className="px-3 py-1.5 rounded-lg bg-accent-600 text-white text-[11px] font-bold">
-                        ✅ Selesai
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* TAB 2: POSTING BERITA */}
-          {tab === 'berita' && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {/* TAB 1: KELOLA BERITA */}
+          {activeTab === 'berita' && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Form Input Berita Baru */}
               <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4 h-fit">
-                <h3 className="font-bold text-base">Buat Artikel Berita Baru</h3>
-                <form onSubmit={handleAddBerita} className="space-y-3 text-xs">
+                <h3 className="font-bold text-base text-brand-400">✍️ Buat & Terbitkan Berita Baru</h3>
+                <form onSubmit={handleCreateBerita} className="space-y-4 text-xs">
                   <div>
-                    <label className="block mb-1">Judul Berita</label>
-                    <input required type="text" value={judul} onChange={e=>setJudul(e.target.value)} className="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-800 outline-none" />
+                    <label className="block mb-1 font-medium">Judul Berita / Pengumuman *</label>
+                    <input required type="text" value={judul} onChange={e=>setJudul(e.target.value)} className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 outline-none focus:border-brand-500" placeholder="Judul postingan..." />
                   </div>
                   <div>
-                    <label className="block mb-1">Kategori</label>
-                    <select value={kategori} onChange={e=>setKategori(e.target.value)} className="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-800 outline-none">
-                      <option value="Pengumuman">Pengumuman</option>
+                    <label className="block mb-1 font-medium">Kategori *</label>
+                    <select value={kategori} onChange={e=>setKategori(e.target.value)} className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 outline-none focus:border-brand-500 text-slate-200">
+                      <option value="Pengumuman">Pengumuman Resmi</option>
+                      <option value="Kegiatan Desa">Kegiatan Desa</option>
                       <option value="Pembangunan">Pembangunan</option>
-                      <option value="Kegiatan">Kegiatan</option>
+                      <option value="Kesehatan & Posyandu">Kesehatan & Posyandu</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block mb-1">Upload Foto Artikel</label>
-                    <input type="file" accept="image/*" onChange={e=>setFoto(e.target.files[0])} className="w-full text-slate-400 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-brand-600/20 file:text-brand-400 font-semibold" />
+                    <label className="block mb-1 font-medium">Gambar Berita (Opsi)</label>
+                    <input type="file" accept="image/*" onChange={e=>setGambarFile(e.target.files[0])} className="w-full text-slate-400 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:bg-brand-600/20 file:text-brand-400 font-semibold cursor-pointer" />
                   </div>
                   <div>
-                    <label className="block mb-1">Isi Ringkasan Berita</label>
-                    <textarea required rows="4" value={isi} onChange={e=>setIsi(e.target.value)} className="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-800 outline-none"></textarea>
+                    <label className="block mb-1 font-medium">Isi Lengkap Berita *</label>
+                    <textarea required rows="6" value={isi} onChange={e=>setIsi(e.target.value)} className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 outline-none focus:border-brand-500" placeholder="Tulis rincian informasi..."></textarea>
                   </div>
-                  <button type="submit" disabled={loading} className="w-full py-3 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold transition">
-                    {loading ? 'Memproses...' : 'Terbitkan Berita'}
+                  <button type="submit" disabled={posting} className="w-full py-3 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold transition shadow-lg shadow-brand-600/20 disabled:opacity-50">
+                    {posting ? 'Memproses File & Menerbitkan...' : '📢 Terbitkan Berita Sekarang'}
                   </button>
                 </form>
               </div>
 
-              <div className="md:col-span-2 space-y-4">
-                <h3 className="font-bold text-base">Kelola Berita Aktif</h3>
-                <div className="space-y-3">
-                  {berita.map(b => (
-                    <div key={b.id} className="glass-card p-4 rounded-xl flex items-center justify-between gap-4 border border-slate-800">
-                      <div className="flex items-center gap-3">
-                        <img src={b.imageUrl || 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=600&q=80'} className="w-14 h-14 rounded-lg object-cover" />
-                        <div>
-                          <h4 className="font-bold text-sm">{b.judul}</h4>
-                          <span className="text-[10px] text-brand-400 uppercase font-semibold">{b.kategori}</span>
+              {/* List Berita Terbit */}
+              <div className="lg:col-span-2 space-y-4">
+                <h3 className="font-bold text-base text-slate-200">Daftar Berita Aktif Terpublikasi</h3>
+                {berita.length === 0 ? (
+                  <div className="p-8 text-center glass-panel rounded-2xl border border-slate-800 text-xs text-slate-500">
+                    Belum ada berita yang diunggah. Tulis postingan pertama kamu melalui formulir di samping!
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {berita.map(b => (
+                      <div key={b.id} className="glass-card p-4 rounded-2xl border border-slate-800 flex items-start justify-between gap-4">
+                        <div className="flex gap-4 items-center">
+                          {b.imageUrl ? (
+                            <img src={b.imageUrl} className="w-16 h-16 rounded-xl object-cover border border-slate-700 shrink-0" />
+                          ) : (
+                            <div className="w-16 h-16 rounded-xl bg-slate-800 flex items-center justify-center text-xl shrink-0">📰</div>
+                          )}
+                          <div className="space-y-1">
+                            <span className="text-[10px] font-bold text-brand-400 uppercase tracking-wider">{b.kategori || 'Pengumuman'}</span>
+                            <h4 className="font-bold text-xs text-slate-100 line-clamp-1">{b.judul}</h4>
+                            <p className="text-[11px] text-slate-400 line-clamp-1">{b.isi}</p>
+                          </div>
                         </div>
+                        <button onClick={() => handleDeleteBerita(b.id)} className="p-2 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition text-xs shrink-0">
+                          🗑️ Hapus
+                        </button>
                       </div>
-                      <button onClick={()=>handleDeleteBerita(b.id)} className="px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white text-xs transition">
-                        Hapus
-                      </button>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}
 
-          {/* TAB 3: KRITIK & SARAN */}
-          {tab === 'saran' && (
+          {/* TAB 2: KELOLA JEMPUT BERKAS */}
+          {activeTab === 'layanan' && (
             <div className="space-y-4">
-              <h3 className="font-bold text-lg">Daftar Kritik & Saran Warga</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {saran.map(s => (
-                  <div key={s.id} className="glass-card p-5 rounded-2xl border border-slate-800 space-y-2 text-xs">
-                    <span className="font-bold text-brand-400">{s.nama}</span>
-                    <p className="p-3 bg-slate-900 rounded-xl text-slate-300 leading-relaxed">{s.pesan}</p>
-                  </div>
-                ))}
-              </div>
+              <h3 className="font-bold text-base text-slate-200">Permohonan Surat & Penjemputan Berkas Masuk</h3>
+              {layanan.length === 0 ? (
+                <div className="p-8 text-center glass-panel rounded-2xl border border-slate-800 text-xs text-slate-500">
+                  Belum ada permohonan layanan baru dari warga.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {layanan.map(l => (
+                    <div key={l.id} className="glass-panel p-5 rounded-2xl border border-slate-800 space-y-3">
+                      <div className="flex justify-between items-start border-b border-slate-800 pb-3">
+                        <div>
+                          <h4 className="font-bold text-sm text-slate-100">{l.nama}</h4>
+                          <p className="text-xs text-brand-400 font-medium">{l.jenisSurat}</p>
+                        </div>
+                        <select 
+                          value={l.status || "Menunggu Penjemputan"} 
+                          onChange={(e) => handleUpdateStatusLayanan(l.id, e.target.value)}
+                          className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700 text-slate-200 outline-none"
+                        >
+                          <option value="Menunggu Penjemputan">⏳ Menunggu Penjemputan</option>
+                          <option value="Sedang Diproses">🔄 Sedang Diproses</option>
+                          <option value="Selesai">✅ Selesai</option>
+                        </select>
+                      </div>
+
+                      <div className="text-xs space-y-1 text-slate-400">
+                        <p><span className="text-slate-500 font-medium">NIK:</span> {l.nik}</p>
+                        <p><span className="text-slate-500 font-medium">Padukuhan / RT:</span> {l.padukuhan}</p>
+                        <p><span className="text-slate-500 font-medium">WhatsApp:</span> <a href={`https://wa.me/${l.whatsapp}`} target="_blank" className="text-brand-400 underline">{l.whatsapp}</a></p>
+                        {l.catatan && <p><span className="text-slate-500 font-medium">Patokan Lokasi:</span> {l.catatan}</p>}
+                      </div>
+
+                      {l.lampiran && (
+                        <div className="pt-2">
+                          <p className="text-[10px] text-slate-500 mb-1">Lampiran Foto Persyaratan:</p>
+                          <img src={l.lampiran} className="h-32 w-full object-cover rounded-xl border border-slate-800" />
+                        </div>
+                      )}
+
+                      <div className="pt-2 border-t border-slate-800/80 flex justify-end">
+                        <button onClick={() => handleDeleteLayanan(l.id)} className="text-[11px] text-red-400 hover:underline">
+                          Hapus Permohonan
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB 3: MASUKAN WARGA */}
+          {activeTab === 'saran' && (
+            <div className="space-y-4">
+              <h3 className="font-bold text-base text-slate-200">Aspirasi & Masukan Warga Siraman</h3>
+              {saran.length === 0 ? (
+                <div className="p-8 text-center glass-panel rounded-2xl border border-slate-800 text-xs text-slate-500">
+                  Belum ada kritik dan saran yang masuk.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {saran.map(s => (
+                    <div key={s.id} className="glass-card p-5 rounded-2xl border border-slate-800 space-y-2 flex justify-between items-start">
+                      <div>
+                        <span className="text-[10px] text-brand-400 font-bold uppercase">{s.nama || 'Anonim'}</span>
+                        <p className="text-xs text-slate-200 mt-1 leading-relaxed">{s.pesan}</p>
+                        <span className="text-[10px] text-slate-500 block mt-2">{new Date(s.timestamp || Date.now()).toLocaleString('id-ID')}</span>
+                      </div>
+                      <button onClick={() => handleDeleteSaran(s.id)} className="text-xs text-red-400 hover:text-red-300 p-1">
+                        🗑️
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
       );
     }
 
-    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    // Render React App to DOM
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
   </script>
 </body>
 </html>
